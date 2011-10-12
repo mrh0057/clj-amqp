@@ -1,0 +1,13 @@
+# clj-ampq
+
+A common api for communicating with amqp servers.
+
+## Usage
+
+Current library correctly being designed.
+
+## License
+
+Copyright (C) 2011 Matt Hoyt
+
+Distributed under the Eclipse Public License, the same as Clojure.

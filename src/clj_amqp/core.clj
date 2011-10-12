@@ -1,0 +1,1 @@
+(ns clj-amqp.core)
