@@ -18,7 +18,7 @@
   "Used to publish a message thats encode with json"
   [exchange routing-key body & options]
   `(clj-amqp.core/publish ~exchange ~routing-key
-                          (clj-amqp.core/encode-body ~body) ~@options))
+                          (clj-amqp-json.core/encode-body ~body) ~@options))
 
 (defmacro create-consumer
   "Used to create a consumer function.
