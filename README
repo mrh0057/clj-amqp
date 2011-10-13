@@ -1,10 +1,19 @@
 # clj-ampq
 
-A common low level api for communicating with amqp servers.
+A common low level api for communicating with amqp servers.  Provides an implemenation that use rabbitmq library to provide the connection to the amqp server.
 
 ## Usage
 
-Current library is being designed and will contain the core library which has the low level functionality for working with amqp servers and another library that has a dsl.
+Goal is to have a low level library that people can then create DSL specific for their application.
+
+Core contains a basic low level dsl where you can do things like:
+
+  (with-channel my-channel
+    (acknowledge delivery))
+
+When you do that you bind the channel to a thread local variable called *channel* that exists in clj-amqp.core.
+
+You will need to write your own encode/decode for the body of the messages depending on the type of messages you are using.
 
 ## License
 

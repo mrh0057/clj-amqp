@@ -13,6 +13,8 @@
            [java.util HashMap])
   (:require [clojure.string :as str-utils]))
 
+(def^:dynamic *channel*)
+
 (extend-type Connection
   ConnectionProtocol
   (create-channel
