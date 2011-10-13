@@ -28,7 +28,7 @@ body
 
 binds 
   body 
-    The decode json message
+    The decoded json message
   envelope
     The envlope
   properties
