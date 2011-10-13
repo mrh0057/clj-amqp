@@ -5,6 +5,53 @@
                      routing-key
                      redelivered])
 
+(defrecord MessageProperties [class-id
+                              content-type
+                              content-encoding
+                              headers
+                              delivery-mode
+                              priority
+                              correlation-id
+                              reply-to
+                              expiration
+                              message-id
+                              timestamp
+                              type
+                              user-id
+                              app-id
+                              cluster-id])
+
+(defn make-message-properties [class-id
+                               content-type
+                               content-encoding
+                               headers
+                               delivery-mode
+                               priority
+                               correlation-id
+                               reply-to
+                               expiration
+                               message-id
+                               timestamp
+                               type
+                               user-id
+                               app-id
+                               cluster-id]
+  (MessageProperties. class-id
+                      content-type
+                      content-encoding
+                      headers
+                      delivery-mode
+                      priority
+                      correlation-id
+                      reply-to
+                      expiration
+                      message-id
+                      timestamp
+                      type
+                      user-id
+                      app-id
+                      cluster-id))
+
 (defn make-envelope [delivery-tag exchange routing-key redelivered]
   (Envelope. delivery-tag
              exchange
@@ -74,11 +121,11 @@ queue
   The name of the queue to consume
 consumer
   A function that consumes the incoming messages.
-  The function takes two arguments the body and Envelope.
+  The function takes three arguments the body, Envelope, and properties.
 
 returns
   The consumer tag.")
-  (publish [this exchange routing-key body & options]
+  (publish [this exchange routing-key body] [this exchange routing-key body options]
     "Used to publish a message.
 
 exchange
@@ -88,6 +135,35 @@ routing-key
 body
   The body of the message to publish.
 options
+  :content-type 
+    defaults to nil
+  :content-encoding d
+    efaults to nil
+  :headers 
+    defaults to nil
+  :delivery-mode 
+    defaults to nil
+   :persistent  The message survives a restart.
+   :nonpersitent  The message maybe lost if the server restarts.
+  :priority 
+     defaults to nil
+  :correlation-id 
+     defaults to nil
+  :reply-to 
+     defaults to nil
+  :expiration 
+    defaults to nil
+  :message-id 
+    defaults to nil
+  :timestamp
+    defaults to nil
+  :type
+    defaults to nil
+  :user-id
+  :app-id
+    defaults to nil
+  :cluster-id
+    defaults to nil
   :mandatory defaults to false. True to make the publish mandatory.
   :immediate defaults to false. True to request to be immediately published")
   (exchange [this name type] [this name type options]

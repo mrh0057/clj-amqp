@@ -1,6 +1,10 @@
 (ns clj-rabbitmq.internal.constants
   (:import [com.rabbitmq.client AMQP]))
 
+(def *delivery-no-persistent* 1)
+
+(def *delivery-persistent* 2)
+
 (def *access-refused* AMQP/ACCESS_REFUSED)
 
 (def *channel-error* AMQP/CHANNEL_ERROR)

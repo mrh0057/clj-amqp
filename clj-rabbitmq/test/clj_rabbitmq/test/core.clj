@@ -78,7 +78,7 @@
   (with-open [connection (get-test-connection)
               channel (create-channel connection)]
     (declare-queue channel "consumer.test" false true true)
-    (consumer channel "consumer.test" (fn [body envelope]))))
+    (consumer channel "consumer.test" (fn [body envelope message-props]))))
 
 (deftest exchange-test
   (with-open [connection (get-test-connection)
@@ -87,3 +87,13 @@
     (exchange channel "my.exchange" :direct {:durable false
                                              :auto-delete false
                                              :internal false})))
+
+(deftest publish-test
+  (with-open [connection (get-test-connection)
+              channel (create-channel connection)]
+    (exchange channel "myexchange3" :direct )
+    (declare-queue channel "publish.test3" false true true)
+    (bind-queue channel "publish.test3" "myexchange3" "mykey")
+    (publish channel "myexchange3" "mykey" (.getBytes "hello world"))
+    (publish channel "myexchange3" "mykey" (.getBytes "hello world") {:type "hello"
+                                                                      :user-id "guest"})))

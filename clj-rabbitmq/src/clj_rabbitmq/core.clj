@@ -1,6 +1,7 @@
 (ns clj-rabbitmq.core
   (:use clj-rabbitmq.internal.options
         clj-rabbitmq.internal.constants
+        clj-rabbitmq.internal.core
         clj-amqp.connection
         clj-amqp.channel)
   (:import [com.rabbitmq.client ConnectionFactory
@@ -8,6 +9,7 @@
             Channel
             DefaultConsumer
             AMQP]
+           com.rabbitmq.client.AMQP$BasicProperties
            [java.util HashMap])
   (:require [clojure.string :as str-utils]))
 
@@ -44,7 +46,8 @@
                 (make-envelope (.getDeliveryTag envelope)
                                (.getExchange envelope)
                                (.getRoutingKey envelope)
-                               (.isRedeliver envelope))))
+                               (.isRedeliver envelope))
+                (convert-message-properites properties)))
     (handleRecoverOk [])
     (handleShutdownSignal [consumerTag sig])))
 
@@ -83,6 +86,11 @@
   (consumer ([this queue consumer]
                (.basicConsume this queue false (create-consumer-proxy this consumer)))
     ([this queue consumer options]))
+  (publish
+    ([this exchange routing-key body]
+       (.basicPublish this exchange routing-key (new AMQP$BasicProperties) body))
+    ([this exchange routing-key body options]
+       (.basicPublish this exchange routing-key (convert-options-to-basic-properties options) body)))
   (exchange ([this name type]
                (.exchangeDeclare this name (keyword-to-string type)))
     ([this name type options]

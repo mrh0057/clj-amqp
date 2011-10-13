@@ -1,10 +1,10 @@
 # clj-ampq
 
-A common api for communicating with amqp servers.
+A common low level api for communicating with amqp servers.
 
 ## Usage
 
-Current library correctly being designed.
+Current library is being designed and will contain the core library which has the low level functionality for working with amqp servers and another library that has a dsl.
 
 ## License
 
