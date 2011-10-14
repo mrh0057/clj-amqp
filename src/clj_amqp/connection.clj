@@ -31,6 +31,6 @@ timeout
 
 notifier
   The function to be notified when the conenction is terminated.
-    Function takes on parameter which is the cause of the shutdown.")
+    Function takes on parameter ShutdownSignalInfo.")
   (open? [this]
     "Checks to see if the connection is open."))
