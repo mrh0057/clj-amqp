@@ -13,8 +13,6 @@ Core contains a basic low level dsl where you can do things like:
 
 When you do that you bind the channel to a thread local variable called *channel* that exists in clj-amqp.core.
 
-You will need to write your own encode/decode for the body of the messages depending on the type of messages you are using.
-
 ## License
 
 Copyright (C) 2011 Matt Hoyt
