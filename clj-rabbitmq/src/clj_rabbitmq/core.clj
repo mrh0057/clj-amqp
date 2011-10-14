@@ -8,12 +8,20 @@
             Connection
             Channel
             DefaultConsumer
+            ShutdownListener
             AMQP]
            com.rabbitmq.client.AMQP$BasicProperties
            [java.util HashMap])
   (:require [clojure.string :as str-utils]))
 
-(def^:dynamic *channel*)
+(defn create-shotdown-listener-proxy [function-handler]
+  (proxy [ShutdownListener] []
+    (shutdownCompleted [cause]
+      (function-handler (make-shutdown-signal-info
+                         (.getReason cause)
+                         (.getReference cause)
+                         (.isHardError cause)
+                         (.isInitiatedByApplication cause))))))
 
 (extend-type Connection
   ConnectionProtocol
@@ -36,7 +44,11 @@
   (heart-beat [this]
     (.getHeartbeat this))
   (port [this]
-    (.getPort this)))
+    (.getPort this))
+  (add-shutdown-notifier [this notifier]
+    (.addShutdownListener this notifier))
+  (open? [this]
+    (.isOpen this)))
 
 (defn- create-consumer-proxy [channel consumer]
   (proxy [DefaultConsumer] [channel]
