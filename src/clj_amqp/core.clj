@@ -14,7 +14,7 @@ channel
 body
   The expressions to execute."
   [channel & body]
-  `(binding [*channel* ~channel]
+  `(binding [clj-amqp.core/*channel* ~channel]
      ~@body))
 
 (defn acknowledge
