@@ -65,11 +65,6 @@
     (handleRecoverOk [])
     (handleShutdownSignal [consumerTag sig])))
 
-(defn- keyword-to-string [keyword]
-  (-> (str keyword)
-      rest
-      str-utils/join))
-
 (extend-type Channel
   ChannelProtocol
   (exclusive-queue [this]
@@ -106,9 +101,9 @@
     ([this exchange routing-key body options]
        (.basicPublish this exchange routing-key (convert-options-to-basic-properties options) body)))
   (exchange ([this name type]
-               (.exchangeDeclare this name (keyword-to-string type)))
+               (.exchangeDeclare this name (clojure.core/name type)))
     ([this name type options]
-       (.exchangeDeclare this name (keyword-to-string type)
+       (.exchangeDeclare this name (clojure.core/name type)
                          (if (contains? options :durable)
                            (:durable options)
                            false)

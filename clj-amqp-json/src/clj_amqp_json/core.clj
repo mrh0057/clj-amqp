@@ -1,6 +1,5 @@
 (ns clj-amqp-json.core
-  (:use clj-json.core)
-  (:require [clj-amqp.core :as amqp]))
+  (:use clj-json.core))
 
 (defn encode-body
   "Will not encode dates.  If you are sending dates convert to long."
