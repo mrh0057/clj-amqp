@@ -24,6 +24,30 @@ delivery-tag
   The delivery tag to acknowledge"[delivery-tag]
   (channel/acknowledge *channel* delivery-tag))
 
+(defn reject
+  "Used to not acknowledge a message delivery.
+
+delivery-tag 
+  The delivery tag to not acknowledge.
+requeue
+  To requeue the messae
+multiple
+  reject multiple"
+  ([delivery-tag requeue]
+     (reject delivery-tag requeue false))
+  ([delivery-tag requeue multiple]
+     (channel/reject *channel* delivery-tag requeue multiple)))
+
+(defn queue-exists?
+  "Checks to see if a queue exists.
+
+queue
+  The name of the queue
+returns
+  true if the queue exists"
+  [queue]
+  (channel/queue-exists? *channel* queue))
+
 (defn exclusive-queue
   "Creates a server-named exclusive, autodelete, non-durable queue.
 

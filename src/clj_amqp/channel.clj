@@ -59,6 +59,12 @@
              redelivered))
 
 (defprotocol ChannelProtocol
+  (queue-exists? [this queue]
+    "Checks to see if a queue exists.
+queue
+  The name of the queue.
+returns
+  true if the queue exists")
   (exclusive-queue [this]
     "Creates a server-named exclusive, autodelete, non-durable queue.
 
@@ -110,6 +116,15 @@ queue
 
 delivery-tag
   The tag to acknowledge the message.")
+  (reject [this delivery-tag requeue] [this delivery-tag requeue multiple]
+    "Rejects a message.
+
+deliver-tag
+  The delivery tag
+requeue
+  Requeue the message
+multiple 
+  true reject all messages up to and including the supplied delivery tag.")
   (cancel-consumer [this consumer-tag]
     "Cancels a consumer
 
@@ -164,8 +179,10 @@ options
     defaults to nil
   :cluster-id
     defaults to nil
-  :mandatory defaults to false. True to make the publish mandatory.
-  :immediate defaults to false. True to request to be immediately published")
+  :mandatory defaults to false. 
+    True to make the publish mandatory.
+  :immediate defaults to false. 
+    True to request to be immediately published")
   (exchange [this name type] [this name type options]
     "Used to create an exchange.
 

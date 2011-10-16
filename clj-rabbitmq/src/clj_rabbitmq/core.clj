@@ -55,7 +55,7 @@
     (handleCancel [consumer-tag])
     (handleCancelOk [consumer-tag])
     (handleConsumeOk [consumer-tag])
-    (handleDelivery [consumer-tag ^com.rabbitmq.client.Envelope envelope properties body]
+    (handleDelivery [consumer-tag ^com.rabbitmq.client.Envelope envelope properties ^bytes body]
       (consumer body
                 (make-envelope (.getDeliveryTag envelope)
                                (.getExchange envelope)
@@ -67,6 +67,8 @@
 
 (extend-type Channel
   ChannelProtocol
+  (queue-exists? [this queue]
+    (.queueDeclarePassive this queue))
   (exclusive-queue [this]
     (.getQueue (.queueDeclare this)))
   (bind-queue [this queue exchange routing-key]
@@ -90,6 +92,10 @@
     (.queuePurge this queue))
   (acknowledge [this delivery-tag]
     (.basicAck this delivery-tag false))
+  (reject ([this delivery-tag requeue]
+             (.basicReject this delivery-tag requeue))
+    ([this delivery-tag requeue multiple]
+       (.basicNack this delivery-tag multiple requeue)))
   (cancel-consumer [this consumer-tag]
     (.basicCancel this consumer-tag))
   (consumer ([this queue consumer]
@@ -116,6 +122,8 @@
                          (new HashMap))))
   (bind-exchange [this destination source routing-key]
     (.exchangeBind this destination source routing-key))
+  (unbind-exchange [this destination source routing-key]
+    (.exchangeUnbind this destination source routing-key))
   (delete-exchange ([this exchange]
                       (.exchangeDelete this exchange))
     ([this exchange unused]
@@ -147,14 +155,14 @@ virtual-host
 ssl - true to enable ssl
 "
   [props]
-  (let [{host :host
-         username :username
-         password :password
-         port :port
-         request-channel-max :request-channel-max
-         request-heartbeat :request-heartbeat
-         virtual-host :virtual-host
-         ssl :ssl} props]
+  (let [{:keys [host 
+                username 
+                password 
+                port 
+                request-channel-max 
+                request-heartbeat 
+                virtual-host
+                ssl]} props]
     (let [connection (new ConnectionFactory)]
       (doto connection
         (.setHost host)
