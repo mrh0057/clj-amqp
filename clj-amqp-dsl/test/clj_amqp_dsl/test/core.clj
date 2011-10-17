@@ -10,16 +10,17 @@
 (defn connection-create-func []
   (connect {:host "localhost"}))
 
-(start connection-create-func)
+(defn consumer-handler-test-func [msg envelope properites]
+  (println "Thread went to sleep")
+  (println "Executed.....")
+  (println "The number of channels is: " (.size (:channels @*connection-info*))))
 
 (deftest create-consumer-test
   (let [body {:a "body"}]
-    (doseq [x (range 0 10000)]
+    (doseq [x (range 0 100)]
       ((create-consumer (fn [^bytes body props]
                           (decode body))
-                        (println "Thread went to sleep")
-                        (println "Executed.....")
-                        (println "The number of channels is: " (.size (:channels @*connection-info*)))) (encode body) "b" "c"))))
+                        consumer-handler-test-func) (encode body) "b" "c"))))
 
 (deftest check-current-channels-test)
 

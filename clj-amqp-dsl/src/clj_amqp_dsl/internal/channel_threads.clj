@@ -54,23 +54,23 @@
   (if (not (:connection @*connection-info*))
     (let [new-connection-info (make-connection-info (create-connection)
                                                     (new java.util.concurrent.ConcurrentHashMap 300))]
-      (let [connection (:connection (swap! *connection-info*
-                                           (fn [old-connection]
-                                             (if (and (:connection old-connection)
-                                                      (open? (:connection old-connection)))
-                                               old-connection
-                                               new-connection-info))))]
+      (let [connection (swap! *connection-info*
+                              (fn [old-connection]
+                                (if (and (:connection old-connection)
+                                         (open? (:connection old-connection)))
+                                  old-connection
+                                  new-connection-info)))]
         (if (not= @*connection-info* new-connection-info)
           (.close (:connection new-connection-info)))
         connection))
-    (:connection @*connection-info*)))
+    @*connection-info*))
 
 (defn create-new-channel []
   (println "creating a new channel")
-  (create-channel (get-connection)))
+  (create-channel (:connection (get-connection))))
 
 (defn- get-channel-by-thread-id [thread-id]
-  (let [current-channels (:channels @*connection-info*)]
+  (let [current-channels (:channels (get-connection))]
     (if (contains? current-channels thread-id)
       (get current-channels thread-id)
       (let [channel (make-channel-info thread-id (create-new-channel))]
