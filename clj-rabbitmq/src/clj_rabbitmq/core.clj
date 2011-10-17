@@ -46,7 +46,8 @@
   (port [this]
     (.getPort this))
   (add-shutdown-notifier [this notifier]
-    (.addShutdownListener this notifier))
+    (.addShutdownListener this (create-shotdown-listener-proxy
+                                notifier)))
   (open? [this]
     (.isOpen this)))
 
@@ -68,7 +69,10 @@
 (extend-type Channel
   ChannelProtocol
   (queue-exists? [this queue]
-    (.queueDeclarePassive this queue))
+    (try
+      (.queueDeclarePassive this queue)
+      (catch Exception e
+        false)))
   (exclusive-queue [this]
     (.getQueue (.queueDeclare this)))
   (bind-queue [this queue exchange routing-key]

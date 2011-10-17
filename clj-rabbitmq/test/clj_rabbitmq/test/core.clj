@@ -71,8 +71,14 @@
         channel (create-channel connection)
         queue (exclusive-queue channel)]
     (purge-queue channel queue)
+    (queue-exists? channel "me")
     (.close channel)
     (.close connection)))
+
+(deftest queue-exist-test
+  (with-open [connection (get-test-connection)
+              channel (create-channel connection)]
+    ))
 
 (deftest consumer-test
   (with-open [connection (get-test-connection)
