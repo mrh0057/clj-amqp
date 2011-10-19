@@ -4,7 +4,9 @@
            [java.util Date]
            clj_amqp_dsl.internal.ChannelThreadFactory)
   (:use [clj-amqp-dsl.connection :only [create-connection]]
-        [clj-amqp.connection :only [create-channel add-shutdown-notifier open?]]))
+        clj-amqp.common
+        [clj-amqp.connection :only [create-channel add-shutdown-notifier]])
+  (:require [clj-amqp.channel :as channel]))
 
 (defrecord ConnectionInfo [connection
                            channels])
@@ -45,10 +47,12 @@
   (try
     (add-shutdown-notifier connection (fn [reason]
                                         (println "Connection removed!")
+                                        (.printStackTrace reason)
                                         (:connection (swap! *connection-info*
-                                                {}))))
+                                                (fn [old] {})))))
     (catch Exception e
-      (println e))))
+      (println e)
+      (.printStackTrace e))))
 
 (defn get-connection []
   (if (not (:connection @*connection-info*))
@@ -88,17 +92,17 @@ returns
 
 (defn remove-old-channels
   "Used to remove old channels."
-  []
-  (println "String to remove old channels.")
-  (if-let [map (:channels @*connection-info*)]
-      (let [date (.getTime (new Date))]
-        (doseq [channel (.values map)]
-          (if (< date (+ *timeout* (.getTime (:timestamp channel))))
-            (try
-              (.close (:channel channel))
-              (catch Exception e
-                (println e)))
-           (.remove map (:thread-id map)))))))
+  [channels]
+  (println "Removing old channels.")
+  (let [date (.getTime (new Date))]
+    (doseq [channel (.values channels)]
+      (if (< date (+ *timeout* (.getTime (:timestamp channel))))
+        (try
+          (close (:channel channel))
+          (catch Exception e
+            (println e)
+            (.printStackTrace e)))
+        (.remove channels (:thread-id channel))))))
 
 (defn- clean-thread []
   (loop []
@@ -106,7 +110,8 @@ returns
       (do
         (. Thread (sleep *cleaning-period*))
         (println "Looking for old channels...")
-        (remove-old-channels)
+        (if-let [channels (:channels @*connection-info*)]
+          (remove-old-channels channels))
         (recur)))))
 
 (defn- start-clearing-thread []

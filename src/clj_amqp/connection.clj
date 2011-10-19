@@ -13,7 +13,7 @@
     "Used to create a channel
 number Optional
   Assign the channel a number if available")
-  (close [this] [this timeout]
+  (close-with-timeout [this timeout]
     "Use to close the connection.
 timeout
   The number of millisecond for the connection to timout.")
@@ -31,6 +31,4 @@ timeout
 
 notifier
   The function to be notified when the conenction is terminated.
-    Function takes on parameter ShutdownSignalInfo.")
-  (open? [this]
-    "Checks to see if the connection is open."))
+    Function takes on parameter ShutdownSignalInfo."))

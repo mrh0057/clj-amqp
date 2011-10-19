@@ -2,6 +2,7 @@
   (:use clj-rabbitmq.internal.options
         clj-rabbitmq.internal.constants
         clj-rabbitmq.internal.core
+        clj-amqp.common
         clj-amqp.connection
         clj-amqp.channel)
   (:import [com.rabbitmq.client ConnectionFactory
@@ -32,9 +33,7 @@
        (.createChannel this number)))
   (address [this]
     (.getAddress this))
-  (close
-    ([this]
-       (.close this))
+  (close-with-timeout
     ([this timeout]
        (.close this timeout)))
   (channel-max [this]
@@ -48,6 +47,11 @@
   (add-shutdown-notifier [this notifier]
     (.addShutdownListener this (create-shotdown-listener-proxy
                                 notifier)))
+  Closable
+  (close [this]
+    (if (open? this)
+      (.close this)))
+  Openable
   (open? [this]
     (.isOpen this)))
 
@@ -139,7 +143,14 @@
   (tx-commit [this]
     (.txCommit this))
   (tx-rollback [this]
-    (.txRollback this)))
+    (.txRollback this))
+  Closable
+  (close [this]
+    (if (open? this)
+      (.close this)))
+  Openable
+  (open? [this]
+    (.isOpen this)))
 
 (defn connect
   "Used to connect to the server.

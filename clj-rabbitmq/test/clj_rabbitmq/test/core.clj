@@ -1,6 +1,7 @@
 (ns clj-rabbitmq.test.core
   (:use [clj-rabbitmq.core] :reload)
-  (:use clj-amqp.connection
+  (:use clj-amqp.common
+        clj-amqp.connection
         clj-amqp.channel)
   (:use [clojure.test]))
 
@@ -31,13 +32,13 @@
 
 (deftest connection-abort-test
   (let [connection (get-test-connection)]
-    (address connection)
+    (connection/address connection)
     (.close connection)))
 
 (deftest connection-close-test
   (let [connection (get-test-connection)]
     (close connection)
-    (close (get-test-connection) 3)))
+    (close-with-timeout (get-test-connection) 3)))
 
 (deftest connection-channel-max-test
   (let [connection (get-test-connection)]
@@ -71,8 +72,7 @@
         channel (create-channel connection)
         queue (exclusive-queue channel)]
     (purge-queue channel queue)
-    (queue-exists? channel "me")
-    (.close channel)
+    (is (not (queue-exists? channel "me")))
     (.close connection)))
 
 (deftest queue-exist-test
@@ -103,3 +103,17 @@
     (publish channel "myexchange3" "mykey" (.getBytes "hello world"))
     (publish channel "myexchange3" "mykey" (.getBytes "hello world") {:type "hello"
                                                                       :user-id "guest"})))
+
+(deftest open-channel-test
+  (with-open [connection (get-test-connection)]
+    (let [channel (create-channel connection)]
+      (is (open? channel))
+      (close channel)
+      (is (not (open? channel))))))
+
+(deftest close-channel-test
+  (with-open [connection (get-test-connection)]
+    (let [channel (create-channel connection)]
+      (close channel)
+      (close channel)
+      (close channel))))
