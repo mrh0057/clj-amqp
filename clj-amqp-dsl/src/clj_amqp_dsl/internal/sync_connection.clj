@@ -1,6 +1,7 @@
 (ns clj-amqp-dsl.internal.sync-connection
   (:use clj-amqp-dsl.connection
         clj-amqp.common
+        clj-amqp-dsl.internal.core
         clj-amqp.connection))
 
 (defrecord ConnectionProtector [connection])
@@ -11,17 +12,18 @@
 (def *connection*)
 
 (defn setup-connection-listeners [connection]
-  (try
-    (add-shutdown-notifier connection (fn [reason]
-                                        (println "Connection crashed in sync-connection!")
-                                        (.printStackTrace reason)
-                                        (swap! (fn [_]
-                                                 (make-connection-protector create-connection)))))))
+  (add-shutdown-listener-to-connection connection
+                                       (fn [reason]
+                                         (println "Connection crashed in sync-connection!")
+                                         (swap! (fn [_]
+                                                  (make-connection-protector create-connection))))))
 
 (defn initialize
   "Used to initialize the connection and other things necessary for the functions to perform their duty."
   []
-  (def *connection* (atom (make-connection-protector create-connection))))
+  (let [connection (create-connection)]
+    (setup-connection-listeners connection)
+    (def *connection* (atom (make-connection-protector connection)))))
 
 (defn with-temp-channel
   "Used to wrap the body with a temporary channel.  This function is used internally for use with operations

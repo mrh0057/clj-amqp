@@ -48,6 +48,19 @@ returns
   [queue]
   (channel/queue-exists? *channel* queue))
 
+(defn add-shutdown-notifier
+  "Used to notify a function in the event the connection closes.
+
+notifier
+  The function to call with the channel is closed.
+    Takes 1 parameter with is the ShutdownSignalInfo"
+  [notifier]
+  (add-shutdown-notifier *channel* notifier))
+
+(defn open? []
+  "Checks to see if the channel is open."
+  (open? *channel*))
+
 (defn exclusive-queue
   "Creates a server-named exclusive, autodelete, non-durable queue.
 

@@ -10,6 +10,7 @@
             Channel
             DefaultConsumer
             ShutdownListener
+            ShutdownNotifier
             AMQP]
            com.rabbitmq.client.AMQP$BasicProperties
            [java.util HashMap])
@@ -19,6 +20,7 @@
   (proxy [ShutdownListener] []
     (shutdownCompleted [cause]
       (function-handler (make-shutdown-signal-info
+                         cause
                          (.getReason cause)
                          (.getReference cause)
                          (.isHardError cause)
@@ -44,16 +46,10 @@
     (.getHeartbeat this))
   (port [this]
     (.getPort this))
-  (add-shutdown-notifier [this notifier]
-    (.addShutdownListener this (create-shotdown-listener-proxy
-                                notifier)))
   Closable
   (close [this]
     (if (open? this)
-      (.close this)))
-  Openable
-  (open? [this]
-    (.isOpen this)))
+      (.close this))))
 
 (defn- create-consumer-proxy [channel consumer]
   (proxy [DefaultConsumer] [channel]
@@ -147,7 +143,13 @@
   Closable
   (close [this]
     (if (open? this)
-      (.close this)))
+      (.close this))))
+
+(extend-type ShutdownNotifier
+  ShutdownNotifyable
+  (add-shutdown-notifier [this notifier]
+    (.addShutdownListener this (create-shotdown-listener-proxy
+                                notifier)))
   Openable
   (open? [this]
     (.isOpen this)))

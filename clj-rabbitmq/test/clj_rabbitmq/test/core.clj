@@ -32,7 +32,7 @@
 
 (deftest connection-abort-test
   (let [connection (get-test-connection)]
-    (connection/address connection)
+    (address connection)
     (.close connection)))
 
 (deftest connection-close-test

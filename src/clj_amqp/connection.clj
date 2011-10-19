@@ -1,12 +1,5 @@
 (ns clj-amqp.connection)
 
-(defrecord ShutdownSignalInfo [reason
-                               reference
-                               hard-error
-                               initiated-by-application])
-
-(defn make-shutdown-signal-info [reason reference hard-error initiated-by-application]
-  (ShutdownSignalInfo. reason reference hard-error initiated-by-application))
 
 (defprotocol ConnectionProtocol
   (create-channel [this] [this number]
@@ -25,10 +18,4 @@ timeout
   (heart-beat [this]
     "Get the negotiated heartbeat interval")
   (port [this]
-    "The port number")
-  (add-shutdown-notifier [this notifier]
-    "Adds a shutdown notifier for the connection.
-
-notifier
-  The function to be notified when the conenction is terminated.
-    Function takes on parameter ShutdownSignalInfo."))
+    "The port number"))
