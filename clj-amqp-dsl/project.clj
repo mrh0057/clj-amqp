@@ -6,4 +6,5 @@
   :dev-dependencies [[swank-clojure "1.3.1"]
                      [clj-rabbitmq "0.1.0-SNAPSHOT"]
                      [clj-bson "0.1.0-SNAPSHOT"]
-                     [midje "1.2.0" :exclusions [org.clojure.contrib/core]]])
+                     [midje "1.2.0" :exclusions [org.clojure.contrib/core]]]
+  :warn-on-reflection true)

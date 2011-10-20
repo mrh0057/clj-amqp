@@ -4,5 +4,5 @@
 (defn add-shutdown-listener-to-connection [connection func]
   (add-shutdown-notifier connection
                          (fn [reason]
-                           (.printStackTrace (:exception reason))
+                           (.printStackTrace ^Exception (:exception reason))
                            (func reason))))

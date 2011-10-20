@@ -1,7 +1,8 @@
 (ns
     ^{:doc "All functions are expected to be wrap in with-channel."}
    clj-amqp.core
-  (:require [clj-amqp.channel :as channel]))
+  (:require [clj-amqp.channel :as channel]
+            [clj-amqp.common :as common]))
 
 (def
   ^:dynamic *channel*)
@@ -127,18 +128,18 @@ options
     (channel/delete-queue *channel* queue)
     (channel/delete-queue *channel* queue (apply hash-map options))))
 
-(defn consumer
-  "Used to create a consumer
+(defn consume
+  "Used to consume a message.
 queue
   The name of the queue to consume
 consumer
   A function that consumes the incoming messages.
-  The function takes three arguments the body, Envelope, and properties.
+  The function takes four arguments the channel the consumer is associated with, body, Envelope, and properties.
 
 returns
-  The consumer tag."
+  ConsumerInfo"
   [queue consumer]
-  (channel/consumer *channel* queue consumer))
+  (common/consumer *channel* queue consumer))
 
 (defn cancel-consumer
   "Cancels a consumer

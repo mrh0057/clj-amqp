@@ -8,12 +8,13 @@
 (defn connection-create-func []
   (connect {:host "localhost"}))
 
-;(start connection-create-func)
+;(start connection-create-func 10)
 
-(def *test-pool*)
+;(def *test-pool* (create-channel-pool 10 10))
 
 (deftest create-pool-test
   (with-pooled-channel *test-pool*
-    (println "Execute with channel Umm k")
-    (is (= (num-active *test-pool*) 1)))
+    (fn []
+      (println "Execute with channel Umm k")
+      (is (= (num-active *test-pool*) 1))))
   (is (= (num-active *test-pool*) 0)))

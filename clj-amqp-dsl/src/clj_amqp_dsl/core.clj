@@ -7,16 +7,14 @@
             [clj-amqp-dsl.internal.long-term-connection :as long-term]))
 
 (defn amqp-async-messaging
-  "Wraps the body of the expression and executes it on the thread pool where it has a channel set.
+  "Wraps the body of the expression and executes it on the thread pool where it has a channel bound to that thread.
 
 The functions passed is executed in a separate thread.  So when it returns your function has been
 executed yet!
 
-Do not use the consumer function from the amqp api.  Use one of the provider consumer function. 
-
 func
   The function to execute. This function will execute in a separate thread and is wrap with a channel that is
-bound to that thread."
+  bound to that thread."
   [func]
   (clj-amqp-dsl.internal.channel-threads/execute-function
     (fn []
@@ -41,20 +39,9 @@ consumer
   [queue consumer]
   (long-term/add-consumer-failover queue consumer))
 
-(defn consumer-with-failover-handler
-  "Used to consume a message and adds a your channel failure listener at the same time.
-
-queue
-  The queue for your consumer to process.
-consumer
-  The consumer function
-fail-handler
-  The handler to be called in the event of a channel failure."
-  [queue consumer fail-handler]
-  (long-term/add-consumer-custom-failure-handler queue consumer fail-handler))
-
 (defn create-consumer
-  "Used to create a consumer.
+  "Used to create a consumer.  Must use this method to create consumer with the dsl or you
+will get errors like delivery tag unknown.
 
 decoder
   The decoder to use to decode the messages.
@@ -66,9 +53,9 @@ message-processor
       envelope   The envelope for the message.
       properties The message properites."
   [decoder handler]
-  (fn [body envelope properties]
+  (fn [channel body envelope properties]
     (try
-      (clj-amqp-dsl.internal.channel-threads/execute-function
+      (clj-amqp-dsl.internal.channel-threads/execute-function-with-channel channel
        (fn []
          (try 
            (let [msg (decoder body properties)]
@@ -84,10 +71,15 @@ message-processor
   "Starts the connection to the server.
 
 connection-factory
-  The factory to use to create new connection to the server."
-  [connection-factory]
+  The factory to use to create new connection to the server.
+pool-size
+  The number of channels and threads to use in the pool.
+    For now all of the channels in this pool use the same connection.  If you have performance problems you may
+    want to try creating your own thread pool that also has a pool of channels.  Later realse will most likely
+    move to this model just have to find a way to write it."
+  [connection-factory pool-size]
   (set-create-connection-factory connection-factory)
-  (initialize)
+  (initialize pool-size)
   (sync-connection/initialize)
   (long-term/initialize))
 

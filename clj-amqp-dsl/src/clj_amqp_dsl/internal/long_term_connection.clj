@@ -26,6 +26,7 @@
 
 (defn- shutdown-handler [reason]
   (let [connection (create-connection)]
+    (.printStackTrace ^Exception (:exception reason))
     (swap! *connection* (fn [_]
                           connection))
     (doseq [consumer-queue @*consumers*]
@@ -56,10 +57,9 @@
                                              channel-shutdown-listener)))))
 
 (defn add-consumer-to-harden [queue consumer-processor]
-  (let [channel (create-channel (:connection @*connection*))]
-    (add-shutdown-listener-to-connection channel
-                                         channel-shutdown-listener)
-    (consumer channel queue consumer-processor)))
+  (let [consumer (consumer (:connection @*connection*) queue consumer-processor)]
+    (add-shutdown-listener-to-connection consumer
+                                         channel-shutdown-listener)))
 
 (defn add-consumer-failover
   "Used to add a consumer to an individual channel.  This is done to prevent any type of conflicts with

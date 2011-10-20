@@ -8,6 +8,7 @@
   (:import [com.rabbitmq.client ConnectionFactory
             Connection
             Channel
+            ShutdownSignalException
             DefaultConsumer
             ShutdownListener
             ShutdownNotifier
@@ -18,13 +19,30 @@
 
 (defn create-shotdown-listener-proxy [function-handler]
   (proxy [ShutdownListener] []
-    (shutdownCompleted [cause]
+    (shutdownCompleted [^ShutdownSignalException cause]
       (function-handler (make-shutdown-signal-info
                          cause
                          (.getReason cause)
                          (.getReference cause)
                          (.isHardError cause)
                          (.isInitiatedByApplication cause))))))
+
+(defn- create-consumer-proxy [channel consumer]
+  (proxy [DefaultConsumer] [channel]
+    (handleCancel [consumer-tag]
+      (close channel))
+    (handleCancelOk [consumer-tag])
+    (handleConsumeOk [consumer-tag])
+    (handleDelivery [consumer-tag ^com.rabbitmq.client.Envelope envelope properties ^bytes body]
+      (consumer channel
+                body
+                (make-envelope (.getDeliveryTag envelope)
+                               (.getExchange envelope)
+                               (.getRoutingKey envelope)
+                               (.isRedeliver envelope))
+                (convert-message-properites properties)))
+    (handleRecoverOk [])
+    (handleShutdownSignal [consumerTag sig])))
 
 (extend-type Connection
   ConnectionProtocol
@@ -46,25 +64,15 @@
     (.getHeartbeat this))
   (port [this]
     (.getPort this))
+  ConsumerCreator
+  (consumer [this queue consumer]
+    (let [channel ^Channel (create-channel this)]
+      (make-consumer-info (.basicConsume channel queue false (create-consumer-proxy channel consumer))
+                          channel)))
   Closable
   (close [this]
     (if (open? this)
       (.close this))))
-
-(defn- create-consumer-proxy [channel consumer]
-  (proxy [DefaultConsumer] [channel]
-    (handleCancel [consumer-tag])
-    (handleCancelOk [consumer-tag])
-    (handleConsumeOk [consumer-tag])
-    (handleDelivery [consumer-tag ^com.rabbitmq.client.Envelope envelope properties ^bytes body]
-      (consumer body
-                (make-envelope (.getDeliveryTag envelope)
-                               (.getExchange envelope)
-                               (.getRoutingKey envelope)
-                               (.isRedeliver envelope))
-                (convert-message-properites properties)))
-    (handleRecoverOk [])
-    (handleShutdownSignal [consumerTag sig])))
 
 (extend-type Channel
   ChannelProtocol
@@ -102,9 +110,6 @@
        (.basicNack this delivery-tag multiple requeue)))
   (cancel-consumer [this consumer-tag]
     (.basicCancel this consumer-tag))
-  (consumer ([this queue consumer]
-               (.basicConsume this queue false (create-consumer-proxy this consumer)))
-    ([this queue consumer options]))
   (publish
     ([this exchange routing-key body]
        (.basicPublish this exchange routing-key (new AMQP$BasicProperties) body))
@@ -143,7 +148,10 @@
   Closable
   (close [this]
     (if (open? this)
-      (.close this))))
+      (.close this)))
+  ConsumerCreator
+  (consumer ([this queue consumer-handler]
+               (consumer (.getConnection this) queue consumer-handler))))
 
 (extend-type ShutdownNotifier
   ShutdownNotifyable

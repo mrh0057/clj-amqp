@@ -23,7 +23,7 @@
 
 (deftest create-consumer-test
   (let [body {:a "body"}]
-    (doseq [x (range 0 100)]
+    (doseq [x (range 0 10)]
       ((create-consumer (fn [^bytes body props]
                           (decode body))
                         consumer-handler-test-func) (encode body) "b" "c"))))

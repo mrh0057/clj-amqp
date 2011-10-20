@@ -13,11 +13,17 @@
   (ConnectionInfo. connection))
 
 (defn- add-shutdown-notifier-to-connect [connection]
-  (add-shutdown-notifier (:connection connection) (fn [reason]
-                                        (.printStackTrace reason)
-                                        (swap! connection (fn [old]
-                                                            (assoc old :connection (create-connection))))
-                                        (add-shutdown-notifier-to-connect @connection))))
+  (add-shutdown-notifier (:connection @connection)
+                         (fn [reason]
+                           (.printStackTrace ^Exception (:exception reason))
+                           (swap! connection (fn [old]
+                                               (assoc old :connection (create-connection))))
+                           (add-shutdown-notifier-to-connect connection))))
+
+(defrecord ObjectPoolWithConnection [^ObjectPool object-pool connection])
+
+(defn- make-object-pool-with-connection [^ObjectPool object-pool connection]
+  (ObjectPoolWithConnection. object-pool connection))
 
 (defprotocol ObjectPoolProtocol
   (borrow-object [this]
@@ -32,19 +38,20 @@ obj
   (num-idle [this]
     "Gets the number of idle objects."))
 
-(extend-type ObjectPool
+(extend-type ObjectPoolWithConnection
   ObjectPoolProtocol
   (borrow-object [this]
-    (.borrowObject this))
+    (.borrowObject ^ObjectPool (:object-pool this)))
   (return-object [this obj]
-    (.returnObject this obj))
+    (.returnObject ^ObjectPool (:object-pool this) obj))
   (num-active [this]
-    (.getNumActive this))
+    (.getNumActive ^ObjectPool (:object-pool this)))
   (num-idle [this]
-    (.getNumIdle this))
+    (.getNumIdle ^ObjectPool (:object-pool this)))
   Closable
   (close [this]
-    (.close this)))
+    (.close ^ObjectPool (:object-pool this))
+    (close @(:connection this))))
 
 (defn create-channel-pool
   "Creates a general purpose connection pool for channel.
@@ -55,38 +62,42 @@ max
   The maximum number of channels"
   [min max ]
   (let [connection (atom (make-connection-info (create-connection)))
-        pool (GenericObjectPool. (proxy [PoolableObjectFactory] []
-                                   (activateObject [channel])
-                                   (destoryObject [channel]
-                                     (println "Destroy object called this should never happen!!!")
-                                     (println "Channel status " (open? channel))
-                                     (close channel))
-                                   (makeObject []
-                                     (create-channel (:connection @connection)))
-                                   (passivateObject [channel])
-                                   (validateObject [channel]
-                                     (open? channel)))
-                                 2
-                                 GenericObjectPool/WHEN_EXHAUSTED_BLOCK
-                                 (* 30 1000)
-                                 max
-                                 min
-                                 true
-                                 true
-                                 -1
-                                 10
-                                 -1
-                                 true
-                                 -1)]
-    (add-shutdown-notifier-to-connect @connection)
+        pool (make-object-pool-with-connection
+               (GenericObjectPool. (proxy [PoolableObjectFactory] []
+                                     (activateObject [channel])
+                                     (destoryObject [channel]
+                                       (println "Destroy object called this should never happen!!!")
+                                       (println "Channel status " (open? channel))
+                                       (close channel))
+                                     (makeObject []
+                                       (println "making new channel")
+                                       (create-channel (:connection @connection)))
+                                     (passivateObject [channel])
+                                     (validateObject [channel]
+                                       (if (not (open? channel))
+                                         (.printStackTrace (.getCloseReason channel)))
+                                       (open? channel)))
+                                   2
+                                   GenericObjectPool/WHEN_EXHAUSTED_BLOCK
+                                   (* 30 1000)
+                                   max
+                                   min
+                                   true
+                                   true
+                                   -1
+                                   10
+                                   -1
+                                   true
+                                   -1)
+               connection)]
+    (add-shutdown-notifier-to-connect connection)
     pool))
 
 (defn with-pooled-channel [pooled-channel func]
   (let [channel (borrow-object pooled-channel)]
     (clj-amqp.core/with-channel channel
-      (println "Inside with channel")
       (try
         (func)
         (finally
-         (println "returning channel")
+         (println "returning to pool")
          (return-object pooled-channel channel))))))

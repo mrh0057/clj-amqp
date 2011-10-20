@@ -6,4 +6,9 @@
 (def *thread-group* (new ThreadGroup "amqp-thread-workers"))
 
 (defn -newThread [this runnable]
-  (Thread. #^ThreadGroup *thread-group* #^Runnable runnable))
+  (let [thread (Thread. #^ThreadGroup *thread-group* #^Runnable runnable)]
+    (.setUncaughtExceptionHandler thread (proxy [Thread$UncaughtExceptionHandler] []
+                                           (uncaughtException [t ^Exception e]
+                                             (println "Warning an exception escape a thread and should have been caught.")
+                                             (.printStackTrace e))))
+    thread))

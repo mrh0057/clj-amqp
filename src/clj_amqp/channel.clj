@@ -1,4 +1,5 @@
-(ns clj-amqp.channel)
+(ns clj-amqp.channel
+  (:use clj-amqp.common))
 
 (defrecord Envelope [delivery-tag
                      exchange
@@ -57,6 +58,16 @@
              exchange
              routing-key
              redelivered))
+
+(defrecord ConsumerInfo [consumer-tag channel])
+
+(defn make-consumer-info [consumer-tag channel]
+  (ConsumerInfo. consumer-tag channel))
+
+(extend-type ConsumerInfo
+  ShutdownNotifyable
+  (add-shutdown-notifier [this notifier]
+    (add-shutdown-notifier (:channel this) notifier)))
 
 (defprotocol ChannelProtocol
   (queue-exists? [this queue]
@@ -130,16 +141,6 @@ multiple
 
 consumer-tag
   The tag of the consumer to cancel.")
-  (consumer [this queue consumer]
-    "Used to create a consumer
-queue
-  The name of the queue to consume
-consumer
-  A function that consumes the incoming messages.
-  The function takes three arguments the body, Envelope, and properties.
-
-returns
-  The consumer tag.")
   (publish [this exchange routing-key body] [this exchange routing-key body options]
     "Used to publish a message.
 
