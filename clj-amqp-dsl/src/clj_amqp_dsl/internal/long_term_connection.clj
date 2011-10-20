@@ -27,9 +27,10 @@
 (defn- shutdown-handler [reason]
   (let [connection (create-connection)]
     (.printStackTrace ^Exception (:exception reason))
-    (swap! *connection* (fn [_]
-                          connection))
+    (swap! *connection* (fn [connection-info]
+                          (assoc connection-info :connection connection)))
     (doseq [consumer-queue @*consumers*]
+      (println consumer-queue)
       (add-consumer-to-harden (:queue consumer-queue)
                               (:consumer consumer-queue)))
     ;; do this at the end to prevent an endless cycle if something

@@ -51,21 +51,33 @@ message-processor
     Takes 3 arguments
       message    The decoded body.
       envelope   The envelope for the message.
-      properties The message properites."
-  [decoder handler]
-  (fn [channel body envelope properties]
-    (try
-      (clj-amqp-dsl.internal.channel-threads/execute-function-with-channel channel
-       (fn []
-         (try 
-           (let [msg (decoder body properties)]
-             (handler msg envelope properties))
-           (catch Exception e
-             (println e)
-             (.printStackTrace e)))))
-      (catch Exception e
-        (println e)
-        (.printStackTrace e)))))
+      properties The message properites.
+msg-checker
+  Used to check to see if a message is valid.  Executes in the same thread the connection is on with
+the specified channel for thread safety.
+   message    The decoded message
+   envelope   The envelope for the message
+   properties The message properties"
+  ([decoder handler]
+     (create-consumer decoder handler nil))
+  ([decoder handler msg-checker]
+     (fn [channel body envelope properties]
+       (try
+         (let [msg (decoder body properties)]
+           (with-channel channel
+             (if (or (not msg-checker)
+                     (msg-checker msg envelope properties))
+               (acknowledge (:delivery-tag envelope))))
+          (clj-amqp-dsl.internal.channel-threads/execute-function
+            (fn []
+              (try 
+                (handler msg envelope properties)
+                (catch Exception e
+                  (println e)
+                  (.printStackTrace e))))))
+         (catch Exception e
+           (println e)
+           (.printStackTrace e))))))
 
 (defn start
   "Starts the connection to the server.

@@ -81,7 +81,7 @@ returns
 
 return
   The name of the queue.")
-  (bind-queue [this queue exchange routing-key]
+  (bind-queue [this queue exchange routing-key] [this queue exchange routing-key arguments]
     "Used to create a queue.
 
 queue
@@ -89,16 +89,20 @@ queue
 exchange
   The name of the exchange
 routing-key
-  The routing key")
-  (unbind-queue [this queue exchange routing-key]
+  The routing key
+arguments
+  The additional arguments for the queue.")
+  (unbind-queue [this queue exchange routing-key] [this queue exchange routing-key arguments]
     "Used to unbind a queue
 queue
   The name of the queue
 exchange
   The name of the exchange
 routing-key
-  The routing key of the exchange.")
-  (declare-queue [this queue durable exclusive auto-delete]
+  The routing key of the exchange.
+arguments
+  The additional arguments for unbind a queue. A map of string and objects")
+  (declare-queue [this queue durable exclusive auto-delete] [this queue durable exclusive auto-delete arguments]
     "Used to create a queue
 
 queue
@@ -106,7 +110,9 @@ queue
 durable
   If the queue serivces after the server is shutdown.
 auto-delete
-  To automatically delete the queue")
+  To automatically delete the queue
+arguments
+  The additional arguments for declaring the queue. A map of strings and objects")
   (delete-queue [this queue] [this queue options]
     "Deletes a queue for the server.
 
@@ -204,8 +210,10 @@ options
   :auto-delete
    The exchange is automattically deleted. Defaults to false
   :internal
-   The exchange is internal and can't be directly published to by the client.")
-  (bind-exchange [this destination source routing-key]
+   The exchange is internal and can't be directly published to by the client.
+  :arguments
+   The additional arguments for the exchange")
+  (bind-exchange [this destination source routing-key] [this destination source routing-key arguments]
     "Used to bind an exchange to another exchange.
 
 destination
@@ -213,8 +221,10 @@ destination
 source
   The exchange that receives the messages.
 routing-key
-  The routing key to use to the bind the exchange to")
-  (unbind-exchange [this destination source routing-key]
+  The routing key to use to the bind the exchange to
+arguments
+  The additional arguments for binding the exchange.")
+  (unbind-exchange [this destination source routing-key] [this destination source routing-key arguments]
     "Used unbind an exchange to another exchange.
 
 destination

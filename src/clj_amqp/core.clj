@@ -78,9 +78,13 @@ queue
 exchange
   The name of the exchange
 routing-key
-  The routing key"
-  [queue exchange routing-key]
-  (channel/bind-queue *channel* queue exchange routing-key))
+  The routing key
+arguments
+  The additional arguments to the queue"
+  ([queue exchange routing-key]
+     (channel/bind-queue *channel* queue exchange routing-key))
+  ([queue exchange routing-key arguments]
+     (channel/bind-queue *channel* queue exchange routing-key arguments)))
 
 (defn unbind-queue
   "Used to unbind a queue
@@ -89,9 +93,13 @@ queue
 exchange
   The name of the exchange
 routing-key
-  The routing key of the exchange."
-  [queue exchange routing-key]
-  (channel/unbind-queue *channel* queue exchange routing-key))
+  The routing key of the exchange.
+arguments
+  The string/object map for arguments to unbind the queue."
+  ([queue exchange routing-key]
+     (channel/unbind-queue *channel* queue exchange routing-key))
+  ([queue exchange routing-key arguments]
+     (channel/unbind-queue *channel* queue exchange routing-key arguments)))
 
 (defn declare-queue
   "Used to create a queue
@@ -101,9 +109,13 @@ queue
 durable
   If the queue serivces after the server is shutdown.
 auto-delete
-  To automatically delete the queue"
-  [queue durable exclusive auto-delete]
-  (channel/declare-queue *channel* queue durable exclusive auto-delete))
+  To automatically delete the queue
+arguments
+  The additional arguments for declaring the queue string/object map"
+  ([queue durable exclusive auto-delete]
+     (channel/declare-queue *channel* queue durable exclusive auto-delete))
+  ([queue durable exclusive auto-delete arguments]
+     (channel/declare-queue *channel* queue durable exclusive auto-delete arguments)))
 
 (defn purge-queue
   "Removes all of the messages from the queue.
@@ -135,11 +147,15 @@ queue
 consumer
   A function that consumes the incoming messages.
   The function takes four arguments the channel the consumer is associated with, body, Envelope, and properties.
+message-verifier
+  A function that verifies the message is valid.
+arguments
+  The additional arguments for the consume function. string/object map
 
 returns
   ConsumerInfo"
-  [queue consumer]
-  (common/consumer *channel* queue consumer))
+  ([queue consumer]
+     (common/consumer *channel* queue consumer)))
 
 (defn cancel-consumer
   "Cancels a consumer
@@ -215,7 +231,9 @@ options
   :auto-delete
    The exchange is automattically deleted. Defaults to false
   :internal
-   The exchange is internal and can't be directly published to by the client."
+   The exchange is internal and can't be directly published to by the client.
+  :arguments
+    The additional arguments for the exchange. string/object map"
   [name type & options]
   (if (empty? options)
     (channel/exchange *channel* name type)
@@ -229,9 +247,13 @@ destination
 source
   The exchange that receives the messages.
 routing-key
-  The routing key to use to the bind the exchange to"
-  [destination source routing-key]
-  (channel/bind-exchange *channel* destination source routing-key))
+  The routing key to use to the bind the exchange to
+arguments
+  The additional arguments for the exchange. string/object map"
+  ([destination source routing-key]
+     (channel/bind-exchange *channel* destination source routing-key))
+  ([destination source routing-key arguments]
+     (channel/bind-exchange *channel* destination source routing-key arguments)))
 
 (defn unbind-exchange
   "Used unbind an exchange to another exchange.
@@ -241,9 +263,13 @@ destination
 source
   The exchange that receives the messages.
 routing-key
-  The routing key to use to the bind the exchange to"
-  [destination source routing-key]
-  (channel/unbind-exchange *channel* destination source routing-key))
+  The routing key to use to the bind the exchange to
+arguments 
+  The additional arguments for the queue. string/object map"
+  ([destination source routing-key]
+     (channel/unbind-exchange *channel* destination source routing-key))
+  ([destination source routing-key arguments]
+     (channel/unbind-exchange *channel* destination source routing-key arguments)))
 
 (defn delete-exchange
   "Used to delete the exchange from the server.

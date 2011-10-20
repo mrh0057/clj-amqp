@@ -83,12 +83,18 @@
         false)))
   (exclusive-queue [this]
     (.getQueue (.queueDeclare this)))
-  (bind-queue [this queue exchange routing-key]
-    (.queueBind this queue exchange routing-key))
-  (unbind-queue [this queue exchange routing-key]
-    (.queueUnbind this queue exchange routing-key))
-  (declare-queue [this queue durable exclusive auto-delete]
-    (.getQueue (.queueDeclare this queue durable exclusive auto-delete (new HashMap))))
+  (bind-queue ([this queue exchange routing-key]
+                 (bind-queue this queue exchange routing-key {}))
+    ([this queue exchange routing-key arguments]
+     (.queueBind this queue exchange routing-key arguments)))
+  (unbind-queue ([this queue exchange routing-key]
+                   (unbind-queue this queue exchange routing-key {}))
+    ([this queue exchange routing-key arguments]
+       (.queueUnbind this queue exchange routing-key)))
+  (declare-queue ([this queue durable exclusive auto-delete]
+                    (declare-queue this queue durable exclusive auto-delete {}))
+    ([this queue durable exclusive auto-delete arguments]
+     (.getQueue (.queueDeclare this queue durable exclusive auto-delete arguments))))
   (delete-queue
     ([this queue]
        (.queueDelete this queue))
@@ -128,11 +134,17 @@
                          (if (contains? options :internal)
                            (:internal options)
                            false)
-                         (new HashMap))))
-  (bind-exchange [this destination source routing-key]
-    (.exchangeBind this destination source routing-key))
-  (unbind-exchange [this destination source routing-key]
-    (.exchangeUnbind this destination source routing-key))
+                         (if (contains? options :arguments)
+                           (:arguments options)
+                           {}))))
+  (bind-exchange ([this destination source routing-key]
+                    (bind-exchange this destination source routing-key {}))
+    ([this destination source routing-key arguments]
+       (.exchangeBind this destination source routing-key arguments)))
+  (unbind-exchange ([this destination source routing-key]
+                      (unbind-exchange this destination source routing-key {}))
+    ([this destination source routing-key arguments]
+       (.exchangeUnbind this destination source routing-key arguments)))
   (delete-exchange ([this exchange]
                       (.exchangeDelete this exchange))
     ([this exchange unused]

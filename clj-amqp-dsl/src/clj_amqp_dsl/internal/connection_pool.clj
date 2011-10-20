@@ -99,5 +99,4 @@ max
       (try
         (func)
         (finally
-         (println "returning to pool")
          (return-object pooled-channel channel))))))
