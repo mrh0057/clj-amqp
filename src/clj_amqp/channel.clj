@@ -53,6 +53,11 @@
                       app-id
                       cluster-id))
 
+(defrecord QueueInfo [name consumer-count message-count])
+
+(defn make-queue-info [name consumer-count message-count]
+  (QueueInfo. name consumer-count message-count))
+
 (defn make-envelope [delivery-tag exchange routing-key redelivered]
   (Envelope. delivery-tag
              exchange
@@ -75,7 +80,7 @@
 queue
   The name of the queue.
 returns
-  true if the queue exists")
+  A queue info object.")
   (exclusive-queue [this]
     "Creates a server-named exclusive, autodelete, non-durable queue.
 

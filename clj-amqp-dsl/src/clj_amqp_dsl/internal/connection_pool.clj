@@ -12,12 +12,17 @@
 (defn make-connection-info [connection]
   (ConnectionInfo. connection))
 
+(defn- update-connection [connection]
+  (swap! connection (fn [old]
+                      (if (not (open? (:connection old)))
+                        (assoc old :connection (create-connection))
+                        old))))
+
 (defn- add-shutdown-notifier-to-connect [connection]
   (add-shutdown-notifier (:connection @connection)
                          (fn [reason]
                            (.printStackTrace ^Exception (:exception reason))
-                           (swap! connection (fn [old]
-                                               (assoc old :connection (create-connection))))
+                           (update-connection connection)
                            (add-shutdown-notifier-to-connect connection))))
 
 (defrecord ObjectPoolWithConnection [^ObjectPool object-pool connection])
@@ -71,6 +76,8 @@ max
                                        (close channel))
                                      (makeObject []
                                        (println "making new channel")
+                                       (if (not (open? (:connection @connection)))
+                                         (update-connection connection))
                                        (create-channel (:connection @connection)))
                                      (passivateObject [channel])
                                      (validateObject [channel]

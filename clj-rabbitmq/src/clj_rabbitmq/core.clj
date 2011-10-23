@@ -14,6 +14,7 @@
             ShutdownNotifier
             AMQP]
            com.rabbitmq.client.AMQP$BasicProperties
+           com.rabbitmq.client.AMQP$Queue$DeclareOk
            [java.util HashMap])
   (:require [clojure.string :as str-utils]))
 
@@ -26,6 +27,11 @@
                          (.getReference cause)
                          (.isHardError cause)
                          (.isInitiatedByApplication cause))))))
+
+(defn- convert-declare-queue-ok [^AMQP$Queue$DeclareOk info]
+  (make-queue-info (.getQueue info)
+                   (.getConsumerCount info)
+                   (.getMessageCount info)))
 
 (defn- create-consumer-proxy [channel consumer]
   (proxy [DefaultConsumer] [channel]
@@ -78,7 +84,7 @@
   ChannelProtocol
   (queue-exists? [this queue]
     (try
-      (.queueDeclarePassive this queue)
+      (convert-declare-queue-ok(.queueDeclarePassive this queue))
       (catch Exception e
         false)))
   (exclusive-queue [this]

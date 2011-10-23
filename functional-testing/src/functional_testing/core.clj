@@ -16,7 +16,7 @@
   (start (connection-function username password) pool-size))
 
 (defn direct-publish-test-consumer []
-  (amqp-async-messaging
+  (thread-channel
    (fn []
      (consume "test-queue-direct"
               (create-consumer (fn [^bytes b-body props]
@@ -26,13 +26,13 @@
                                    (println "Direct Publish Failure!!!"))))))))
 
 (defn setup-test-queues []
-  (amqp-async-messaging
+  (thread-channel
    (fn [] (declare-queue "test-queue-direct" false false true)
      (bind-queue "test-queue-direct" "amq.direct" "test.direct")
        (direct-publish-test-consumer))))
 
 (defn direct-publish-test-message []
-  (amqp-async-messaging
+  (thread-channel
    (fn []
      (try
        (doseq [i (range 0 100000)]

@@ -6,11 +6,11 @@
             [clj-amqp.channel :as channel]
             [clj-amqp-dsl.internal.long-term-connection :as long-term]))
 
-(defn amqp-async-messaging
+(defn thread-channel
   "Wraps the body of the expression and executes it on the thread pool where it has a channel bound to that thread.
 
 The functions passed is executed in a separate thread.  So when it returns your function has been
-executed yet!
+executed yet!!!
 
 func
   The function to execute. This function will execute in a separate thread and is wrap with a channel that is
@@ -53,21 +53,35 @@ message-processor
       envelope   The envelope for the message.
       properties The message properites.
 msg-checker
-  Used to check to see if a message is valid.  Executes in the same thread the connection is on with
+  If the msg-checker.  If it return false call the msg-rejection.
+   Takes 3 arguments: 
+     message    The decoded message body.
+     envelope   The envelope for the message.
+     properties The message properties.
+msg-rejection
+  The function to call if you reject the message.  The default implementations sends a rejection response
+   with no requeue.
+   Takes 3 arguments: 
+     message    The decoded message body.
+     envelope   The envelope for the message.
+     properties The message properties.
 the specified channel for thread safety.
    message    The decoded message
    envelope   The envelope for the message
    properties The message properties"
   ([decoder handler]
-     (create-consumer decoder handler nil))
+     (create-consumer decoder handler (fn [msg envelope properties] true)))
   ([decoder handler msg-checker]
+     (create-consumer decoder handler msg-checker (fn [msg envelope properties]
+                                                    (reject (:delivery-tag envelope) false))))
+  ([decoder handler msg-checker msg-rejection]
      (fn [channel body envelope properties]
        (try
          (let [msg (decoder body properties)]
            (with-channel channel
-             (if (or (not msg-checker)
-                     (msg-checker msg envelope properties))
-               (acknowledge (:delivery-tag envelope))))
+             (if (msg-checker msg envelope properties)
+               (acknowledge (:delivery-tag envelope))
+               (msg-rejection msg envelope properties)))
           (clj-amqp-dsl.internal.channel-threads/execute-function
             (fn []
               (try 

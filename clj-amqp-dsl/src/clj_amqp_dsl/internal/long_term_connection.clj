@@ -24,18 +24,25 @@
 
 (def add-consumer-to-harden)
 
-(defn- shutdown-handler [reason]
-  (let [connection (create-connection)]
+(def shutdown-handler)
+
+(defn- update-connection []
+  (swap! *connection*
+         (fn [connection-info]
+           (if (not (open? (:connection connection-info)))
+             (let [connection (create-connection)]
+               (doseq [consumer-queue @*consumers*]
+                 (add-consumer-to-harden connection
+                                         (:queue consumer-queue)
+                                         (:consumer consumer-queue))
+                 (add-shutdown-listener-to-connection connection shutdown-handler))
+               (assoc connection-info :connection connection))
+             connection-info))))
+
+(defn shutdown-handler [reason]
+  (do
     (.printStackTrace ^Exception (:exception reason))
-    (swap! *connection* (fn [connection-info]
-                          (assoc connection-info :connection connection)))
-    (doseq [consumer-queue @*consumers*]
-      (println consumer-queue)
-      (add-consumer-to-harden (:queue consumer-queue)
-                              (:consumer consumer-queue)))
-    ;; do this at the end to prevent an endless cycle if something
-    ;; went wrong
-    (add-shutdown-listener-to-connection connection shutdown-handler)))
+    (update-connection)))
 
 (defn setup-connection-listeners [connection]
   (add-shutdown-listener-to-connection connection shutdown-handler))
@@ -57,10 +64,11 @@
         (add-shutdown-listener-to-connection channel
                                              channel-shutdown-listener)))))
 
-(defn add-consumer-to-harden [queue consumer-processor]
-  (let [consumer (consumer (:connection @*connection*) queue consumer-processor)]
-    (add-shutdown-listener-to-connection consumer
-                                         channel-shutdown-listener)))
+(defn add-consumer-to-harden [connection queue consumer-processor]
+  (if (open? connection)
+    (let [consumer (consumer connection queue consumer-processor)]
+      (add-shutdown-listener-to-connection consumer
+                                           channel-shutdown-listener))))
 
 (defn add-consumer-failover
   "Used to add a consumer to an individual channel.  This is done to prevent any type of conflicts with
@@ -76,7 +84,9 @@ consumer-processor
   (send-off *consumers*
    (fn [val]
      (try
-       (add-consumer-to-harden queue consumer-processor)
+       (if (not (open? (:connection @*connection*)))
+         (update-connection))
+       (add-consumer-to-harden (:connection @*connection*) queue consumer-processor)
        (cons (make-consumer-queue consumer queue) val)
        (catch Exception e
          (.printStackTrace e)
