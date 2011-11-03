@@ -11,9 +11,9 @@
   (:require [clj-amqp.channel :as channel]
             [clj-amqp.core :as amqp]))
 
-(def ^ExecutorService *thread-pool*)
+(declare ^ExecutorService *thread-pool*)
 
-(def *channel-pool*)
+(declare *channel-pool*)
 
 (defn execute-function [func]
   (.submit *thread-pool* 

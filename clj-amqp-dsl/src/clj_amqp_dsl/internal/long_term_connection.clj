@@ -16,15 +16,15 @@
 (defn make-consumer-queue [consumer queue]
   (ConsumerQueue. consumer queue))
 
-(def *consumers*)
+(declare *consumers*)
 
-(def *connection*)
+(declare *connection*)
 
-(def setup-connection-listeners)
+(declare setup-connection-listeners)
 
-(def add-consumer-to-harden)
+(declare add-consumer-to-harden)
 
-(def shutdown-handler)
+(declare shutdown-handler)
 
 (defn- update-connection []
   (swap! *connection*

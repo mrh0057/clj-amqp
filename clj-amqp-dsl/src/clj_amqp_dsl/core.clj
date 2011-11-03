@@ -53,7 +53,7 @@ message-processor
       envelope   The envelope for the message.
       properties The message properites.
 msg-checker
-  If the msg-checker.  If it return false call the msg-rejection.
+  If it return false, then msg-rejection is called.  The default implementation acknowledges the message
    Takes 3 arguments: 
      message    The decoded message body.
      envelope   The envelope for the message.
@@ -64,11 +64,7 @@ msg-rejection
    Takes 3 arguments: 
      message    The decoded message body.
      envelope   The envelope for the message.
-     properties The message properties.
-the specified channel for thread safety.
-   message    The decoded message
-   envelope   The envelope for the message
-   properties The message properties"
+     properties The message properties."
   ([decoder handler]
      (create-consumer decoder handler (fn [msg envelope properties] true)))
   ([decoder handler msg-checker]
@@ -104,10 +100,11 @@ pool-size
     want to try creating your own thread pool that also has a pool of channels.  Later realse will most likely
     move to this model just have to find a way to write it."
   [connection-factory pool-size]
-  (set-create-connection-factory connection-factory)
-  (initialize pool-size)
-  (sync-connection/initialize)
-  (long-term/initialize))
+  (do
+    (set-create-connection-factory connection-factory)
+    (initialize pool-size)
+    (sync-connection/initialize)
+    (long-term/initialize)))
 
 (defn queue-exists?-safe
   "Used to check if a queue exists in a separate channel so that it doesn't close the channel you are working on.
