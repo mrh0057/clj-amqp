@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html><head><title>clj-amqp.common documentation</title><link href="css/default.css" rel="stylesheet" type="text/css"></head><body><h1>clj-amqp.common documentation</h1><pre class="doc"></pre><div class="index"><p>Public variables and functions:</p><ul><li><a href="clj-amqp.common.html#Closable">Closable</a></li><li><a href="clj-amqp.common.html#ConsumerCreator">ConsumerCreator</a></li><li><a href="clj-amqp.common.html#Openable">Openable</a></li><li><a href="clj-amqp.common.html#ShutdownNotifyable">ShutdownNotifyable</a></li><li><a href="clj-amqp.common.html#add-shutdown-notifier">add-shutdown-notifier</a></li><li><a href="clj-amqp.common.html#close">close</a></li><li><a href="clj-amqp.common.html#consumer">consumer</a></li><li><a href="clj-amqp.common.html#make-shutdown-signal-info">make-shutdown-signal-info</a></li><li><a href="clj-amqp.common.html#open?">open?</a></li></ul></div><div class="public" id="Closable"><h3>Closable</h3><div class="usage"></div><pre class="doc"></pre></div><div class="public" id="ConsumerCreator"><h3>ConsumerCreator</h3><div class="usage"></div><pre class="doc"></pre></div><div class="public" id="Openable"><h3>Openable</h3><div class="usage"></div><pre class="doc"></pre></div><div class="public" id="ShutdownNotifyable"><h3>ShutdownNotifyable</h3><div class="usage"></div><pre class="doc"></pre></div><div class="public" id="add-shutdown-notifier"><h3>add-shutdown-notifier</h3><div class="usage"><code>(add-shutdown-notifier this notifier)</code></div><pre class="doc">Used to notify a function in the event the connection closes.
+
+notifier
+  The function to call with the connection is closed.
+    Takes 1 parameter with is the ShutdownSignalInfo</pre></div><div class="public" id="close"><h3>close</h3><div class="usage"><code>(close this)</code></div><pre class="doc">Closing whatever this is.
+
+if this is already closed it should do nothing.</pre></div><div class="public" id="consumer"><h3>consumer</h3><div class="usage"><code>(consumer this queue consumer)</code></div><pre class="doc">Used to create a consumer on its on channel.
+queue
+  The name of the queue to consume
+consumer
+  A function that consumes the incoming messages.
+  The function takes three arguments the body, Envelope, and properties.
+
+returns
+  The consumer tag.</pre></div><div class="public" id="make-shutdown-signal-info"><h3>make-shutdown-signal-info</h3><div class="usage"><code>(make-shutdown-signal-info exception reason reference hard-error initiated-by-application)</code></div><pre class="doc"></pre></div><div class="public" id="open?"><h3>open?</h3><div class="usage"><code>(open? this)</code></div><pre class="doc">Checks to see if something is open.
+</pre></div></body></html>

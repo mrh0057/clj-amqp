@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html><head><title>clj-amqp.core documentation</title><link href="css/default.css" rel="stylesheet" type="text/css"></head><body><h1>clj-amqp.core documentation</h1><pre class="doc">All functions are expected to be wrap in with-channel.
+</pre><div class="index"><p>Public variables and functions:</p><ul><li><a href="clj-amqp.core.html#*channel*">*channel*</a></li><li><a href="clj-amqp.core.html#acknowledge">acknowledge</a></li><li><a href="clj-amqp.core.html#add-shutdown-notifier">add-shutdown-notifier</a></li><li><a href="clj-amqp.core.html#bind-exchange">bind-exchange</a></li><li><a href="clj-amqp.core.html#bind-queue">bind-queue</a></li><li><a href="clj-amqp.core.html#cancel-consumer">cancel-consumer</a></li><li><a href="clj-amqp.core.html#consume">consume</a></li><li><a href="clj-amqp.core.html#declare-queue">declare-queue</a></li><li><a href="clj-amqp.core.html#delete-exchange">delete-exchange</a></li><li><a href="clj-amqp.core.html#delete-queue">delete-queue</a></li><li><a href="clj-amqp.core.html#exchange">exchange</a></li><li><a href="clj-amqp.core.html#exclusive-queue">exclusive-queue</a></li><li><a href="clj-amqp.core.html#flow">flow</a></li><li><a href="clj-amqp.core.html#open?">open?</a></li><li><a href="clj-amqp.core.html#publish">publish</a></li><li><a href="clj-amqp.core.html#purge-queue">purge-queue</a></li><li><a href="clj-amqp.core.html#queue-exists?">queue-exists?</a></li><li><a href="clj-amqp.core.html#reject">reject</a></li><li><a href="clj-amqp.core.html#tx-commit">tx-commit</a></li><li><a href="clj-amqp.core.html#tx-rollback">tx-rollback</a></li><li><a href="clj-amqp.core.html#tx-select">tx-select</a></li><li><a href="clj-amqp.core.html#unbind-exchange">unbind-exchange</a></li><li><a href="clj-amqp.core.html#unbind-queue">unbind-queue</a></li><li><a href="clj-amqp.core.html#with-channel">with-channel</a></li></ul></div><div class="public" id="*channel*"><h3>*channel*</h3><div class="usage"></div><pre class="doc"></pre></div><div class="public" id="acknowledge"><h3>acknowledge</h3><div class="usage"><code>(acknowledge delivery-tag)</code></div><pre class="doc">Used to acknowledge the delivery of a message.
+
+delivery-tag 
+  The delivery tag to acknowledge</pre></div><div class="public" id="add-shutdown-notifier"><h3>add-shutdown-notifier</h3><div class="usage"><code>(add-shutdown-notifier notifier)</code></div><pre class="doc">Used to notify a function in the event the connection closes.
+
+notifier
+  The function to call with the channel is closed.
+    Takes 1 parameter with is the ShutdownSignalInfo</pre></div><div class="public" id="bind-exchange"><h3>bind-exchange</h3><div class="usage"><code>(bind-exchange destination source routing-key)</code><code>(bind-exchange destination source routing-key arguments)</code></div><pre class="doc">Used to bind an exchange to another exchange.
+
+destination
+  The exchange that contains the messages.
+source
+  The exchange that receives the messages.
+routing-key
+  The routing key to use to the bind the exchange to
+arguments
+  The additional arguments for the exchange. string/object map</pre></div><div class="public" id="bind-queue"><h3>bind-queue</h3><div class="usage"><code>(bind-queue queue exchange routing-key)</code><code>(bind-queue queue exchange routing-key arguments)</code></div><pre class="doc">Used to create a queue.
+
+queue
+  The name of the queue
+exchange
+  The name of the exchange
+routing-key
+  The routing key
+arguments
+  The additional arguments to the queue</pre></div><div class="public" id="cancel-consumer"><h3>cancel-consumer</h3><div class="usage"><code>(cancel-consumer consumer-tag)</code></div><pre class="doc">Cancels a consumer
+
+consumer-tag
+  The tag of the consumer to cancel.</pre></div><div class="public" id="consume"><h3>consume</h3><div class="usage"><code>(consume queue consumer)</code></div><pre class="doc">Used to consume a message.
+queue
+  The name of the queue to consume
+consumer
+  A function that consumes the incoming messages.
+  The function takes four arguments the channel the consumer is associated with, body, Envelope, and properties.
+message-verifier
+  A function that verifies the message is valid.
+arguments
+  The additional arguments for the consume function. string/object map
+
+returns
+  ConsumerInfo</pre></div><div class="public" id="declare-queue"><h3>declare-queue</h3><div class="usage"><code>(declare-queue queue durable exclusive auto-delete)</code><code>(declare-queue queue durable exclusive auto-delete arguments)</code></div><pre class="doc">Used to create a queue
+
+queue
+  The name of the queue to create
+durable
+  If the queue serivces after the server is shutdown.
+auto-delete
+  To automatically delete the queue
+arguments
+  The additional arguments for declaring the queue string/object map</pre></div><div class="public" id="delete-exchange"><h3>delete-exchange</h3><div class="usage"><code>(delete-exchange exchange)</code><code>(delete-exchange exchange unused)</code></div><pre class="doc">Used to delete the exchange from the server.
+
+exchange
+  The exchange to delete
+unused
+  delete the exchange if its unused.</pre></div><div class="public" id="delete-queue"><h3>delete-queue</h3><div class="usage"><code>(delete-queue queue & options)</code></div><pre class="doc">Deletes a queue for the server.
+
+queue
+  The name of the queue to delete
+options
+  :unused
+    true to delete the queue if its currently not in use.
+  :empty
+    true to delete teh queue if its not empty</pre></div><div class="public" id="exchange"><h3>exchange</h3><div class="usage"><code>(exchange name type & options)</code></div><pre class="doc">Used to create an exchange.
+
+name 
+  The name of the exchange to create
+type
+  The type of exchange.
+  :direct 
+    Send messages to each queue that matches the routing key exactly.
+  :fanout 
+    Send a message to all of the queues.
+  :topic 
+    Must have a list of words delimited by a . The maxium length is limitted to 255 bytes.
+    For more information: http://www.rabbitmq.com/tutorials/tutorial-five-python.html
+options
+  :durable 
+   The exchange survives a server restart.  Defaults to false
+  :auto-delete
+   The exchange is automattically deleted. Defaults to false
+  :internal
+   The exchange is internal and can't be directly published to by the client.
+  :arguments
+    The additional arguments for the exchange. string/object map</pre></div><div class="public" id="exclusive-queue"><h3>exclusive-queue</h3><div class="usage"><code>(exclusive-queue)</code></div><pre class="doc">Creates a server-named exclusive, autodelete, non-durable queue.
+
+return
+  The name of the queue.</pre></div><div class="public" id="flow"><h3>flow</h3><div class="usage"><code>(flow active)</code></div><pre class="doc">Used to start/stop the flow of messages.
+
+activity
+  True to start sending messages.
+  False to stop stop sending messages.</pre></div><div class="public" id="open?"><h3>open?</h3><div class="usage"><code>(open?)</code></div><pre class="doc"></pre></div><div class="public" id="publish"><h3>publish</h3><div class="usage"><code>(publish exchange routing-key body & options)</code></div><pre class="doc">Used to publish a message.
+
+exchange
+  The exchange to publish the message on.
+routing-key
+  The routing key to
+body
+  The body of the message to publish.
+options
+  :content-type 
+    defaults to nil
+  :content-encoding d
+    efaults to nil
+  :headers 
+    defaults to nil
+  :delivery-mode 
+    defaults to nil
+   :persistent  The message survives a restart.
+   :nonpersitent  The message maybe lost if the server restarts.
+  :priority 
+     defaults to nil
+  :correlation-id 
+     defaults to nil
+  :reply-to 
+     defaults to nil
+  :expiration 
+    defaults to nil
+  :message-id 
+    defaults to nil
+  :timestamp
+    defaults to nil
+  :type
+    defaults to nil
+  :user-id
+  :app-id
+    defaults to nil
+  :cluster-id
+    defaults to nil
+  :mandatory defaults to false. True to make the publish mandatory.
+  :immediate defaults to false. True to request to be immediately published</pre></div><div class="public" id="purge-queue"><h3>purge-queue</h3><div class="usage"><code>(purge-queue queue)</code></div><pre class="doc">Removes all of the messages from the queue.
+
+queue
+  The queue to remove the messages from.</pre></div><div class="public" id="queue-exists?"><h3>queue-exists?</h3><div class="usage"><code>(queue-exists? queue)</code></div><pre class="doc">Checks to see if a queue exists.
+
+queue
+  The name of the queue
+returns
+  true if the queue exists</pre></div><div class="public" id="reject"><h3>reject</h3><div class="usage"><code>(reject delivery-tag requeue)</code><code>(reject delivery-tag requeue multiple)</code></div><pre class="doc">Used to not acknowledge a message delivery.
+
+delivery-tag 
+  The delivery tag to not acknowledge.
+requeue
+  To requeue the messae
+multiple
+  reject multiple</pre></div><div class="public" id="tx-commit"><h3>tx-commit</h3><div class="usage"><code>(tx-commit)</code></div><pre class="doc">Commits the current transaction.
+</pre></div><div class="public" id="tx-rollback"><h3>tx-rollback</h3><div class="usage"><code>(tx-rollback)</code></div><pre class="doc">Rollbacks the current transaction on the channel.
+</pre></div><div class="public" id="tx-select"><h3>tx-select</h3><div class="usage"><code>(tx-select)</code></div><pre class="doc">Enables transactions on the channel
+</pre></div><div class="public" id="unbind-exchange"><h3>unbind-exchange</h3><div class="usage"><code>(unbind-exchange destination source routing-key)</code><code>(unbind-exchange destination source routing-key arguments)</code></div><pre class="doc">Used unbind an exchange to another exchange.
+
+destination
+  The exchange that contains the messages.
+source
+  The exchange that receives the messages.
+routing-key
+  The routing key to use to the bind the exchange to
+arguments 
+  The additional arguments for the queue. string/object map</pre></div><div class="public" id="unbind-queue"><h3>unbind-queue</h3><div class="usage"><code>(unbind-queue queue exchange routing-key)</code><code>(unbind-queue queue exchange routing-key arguments)</code></div><pre class="doc">Used to unbind a queue
+queue
+  The name of the queue
+exchange
+  The name of the exchange
+routing-key
+  The routing key of the exchange.
+arguments
+  The string/object map for arguments to unbind the queue.</pre></div><div class="public" id="with-channel"><h3>with-channel</h3><div class="usage"><code>(with-channel channel & body)</code></div><pre class="doc">Used to start a block of code that binds to a specific channel.
+
+channel
+  The channel to bind to.
+body
+  The expressions to execute.</pre></div></body></html>
