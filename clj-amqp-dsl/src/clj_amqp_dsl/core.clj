@@ -4,7 +4,8 @@
         [clj-amqp-dsl.internal.channel-threads :only [initialize]])
   (:require [clj-amqp-dsl.internal.sync-connection :as sync-connection]
             [clj-amqp.channel :as channel]
-            [clj-amqp-dsl.internal.long-term-connection :as long-term]))
+            [clj-amqp-dsl.internal.long-term-connection :as long-term]
+            [clj-amqp-dsl.internal.unbound-channel-threads :as unbound]))
 
 (defn thread-channel
   "Wraps the body of the expression and executes it on the thread pool where it has a channel bound to that thread.
@@ -19,6 +20,15 @@ func
   (clj-amqp-dsl.internal.channel-threads/execute-function
     (fn []
       (func))))
+
+(defn thread-channel-off
+  "Executes the function in a thread pool that is unbound.  Use this function if your function isn't cpu bound.
+Each thread has a dedicated channel.
+
+func
+  The function to execute in the unbount thread pool"
+  [func]
+  (unbound/execute-function func))
 
 (defn consumer-failover
   "Used to create a consumer that if something where to happen to the connection it will create 
@@ -39,9 +49,63 @@ consumer
   [queue consumer]
   (long-term/add-consumer-failover queue consumer))
 
+(defn- create-consumer-thread
+  [decoder handler msg-checker msg-rejection thread-function]
+  (fn [channel body envelope properties]
+    (try
+      (let [msg (decoder body properties)]
+        (with-channel channel
+          (if (msg-checker msg envelope properties)
+            (acknowledge (:delivery-tag envelope))
+            (msg-rejection msg envelope properties)))
+        (thread-function
+         (fn []
+           (try 
+             (handler msg envelope properties)
+             (catch Exception e
+               (println e)
+               (.printStackTrace e))))))
+      (catch Exception e
+        (println e)
+        (.printStackTrace e)))))
+
 (defn create-consumer
+    "Used to create a consumer.  Must use this method to create consumer with the dsl or you
+will get errors like delivery tag unknown.  Consumer use the cpu bound thread pool.
+
+decoder
+  The decoder to use to decode the messages.
+    The decoder is passed the binary body and the properties for the message.
+message-processor
+  The function that process the incoming message.
+    Takes 3 arguments
+      message    The decoded body.
+      envelope   The envelope for the message.
+      properties The message properites.
+msg-checker
+  If it return false, then msg-rejection is called.  The default implementation acknowledges the message
+   Takes 3 arguments: 
+     message    The decoded message body.
+     envelope   The envelope for the message.
+     properties The message properties.
+msg-rejection
+  The function to call if you reject the message.  The default implementations sends a rejection response
+   with no requeue.
+   Takes 3 arguments: 
+     message    The decoded message body.
+     envelope   The envelope for the message.
+     properties The message properties."
+    ([decoder handler]
+       (create-consumer decoder handler (fn [msg envelope properties] true)))
+    ([decoder handler msg-checker]
+       (create-consumer decoder handler msg-checker (fn [msg envelope properties]
+                                                      (reject (:delivery-tag envelope) false))))
+    ([decoder handler msg-checker msg-rejection]
+       (create-consumer-thread decoder handler msg-checker msg-rejection clj-amqp-dsl.internal.channel-threads/execute-function)))
+
+(defn create-consumer-off
   "Used to create a consumer.  Must use this method to create consumer with the dsl or you
-will get errors like delivery tag unknown.
+will get errors like delivery tag unknown.  Consumer use the unbound thread pool to process incoming messages.
 
 decoder
   The decoder to use to decode the messages.
@@ -71,23 +135,7 @@ msg-rejection
      (create-consumer decoder handler msg-checker (fn [msg envelope properties]
                                                     (reject (:delivery-tag envelope) false))))
   ([decoder handler msg-checker msg-rejection]
-     (fn [channel body envelope properties]
-       (try
-         (let [msg (decoder body properties)]
-           (with-channel channel
-             (if (msg-checker msg envelope properties)
-               (acknowledge (:delivery-tag envelope))
-               (msg-rejection msg envelope properties)))
-          (clj-amqp-dsl.internal.channel-threads/execute-function
-            (fn []
-              (try 
-                (handler msg envelope properties)
-                (catch Exception e
-                  (println e)
-                  (.printStackTrace e))))))
-         (catch Exception e
-           (println e)
-           (.printStackTrace e))))))
+     (create-consumer-thread decoder handler msg-checker msg-rejection unbound/execute-function)))
 
 (defn start
   "Starts the connection to the server.
@@ -104,7 +152,8 @@ pool-size
     (set-create-connection-factory connection-factory)
     (initialize pool-size)
     (sync-connection/initialize)
-    (long-term/initialize)))
+    (long-term/initialize)
+    (unbound/initialize)))
 
 (defn queue-exists?-safe
   "Used to check if a queue exists in a separate channel so that it doesn't close the channel you are working on.

@@ -20,13 +20,13 @@
    (fn []
      (consume "test-queue-direct"
               (create-consumer (fn [^bytes b-body props]
-                                 (decode b-body))
-                               (fn [msg envelope properties]
-                                 (if (not= msg {:direct "testing"})
-                                   (println "Direct Publish Failure!!!"))))))))
+                                     (decode b-body))
+                                   (fn [msg envelope properties]
+                                     (if (not= msg {:direct "testing"})
+                                       (println "Direct Publish Failure!!!"))))))))
 
 (defn setup-test-queues []
-  (thread-channel
+  (thread-channel-off
    (fn [] (declare-queue "test-queue-direct" false false true)
      (bind-queue "test-queue-direct" "amq.direct" "test.direct")
        (direct-publish-test-consumer))))
