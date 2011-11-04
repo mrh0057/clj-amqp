@@ -21,9 +21,5 @@
   (println "Thread went to sleep")
   (println "Executed....."))
 
-(deftest create-consumer-test
-  (let [body {:a "body"}]
-    (doseq [x (range 0 10)]
-      ((create-consumer (fn [^bytes body props]
-                          (decode body))
-                        consumer-handler-test-func) (encode body) "b" "c"))))
+(deftest number-of-processors-test
+  (is (> (number-of-processors) 0)))

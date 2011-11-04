@@ -21,6 +21,11 @@ func
     (fn []
       (func))))
 
+(defn number-of-processors
+  "Used to get the number of processor for the machine."
+  []
+  (.availableProcessors (Runtime/getRuntime)))
+
 (defn thread-channel-off
   "Executes the function in a thread pool that is unbound.  Use this function if your function isn't cpu bound.
 Each thread has a dedicated channel.
@@ -146,7 +151,9 @@ pool-size
   The number of channels and threads to use in the pool.
     For now all of the channels in this pool use the same connection.  If you have performance problems you may
     want to try creating your own thread pool that also has a pool of channels.  Later realse will most likely
-    move to this model just have to find a way to write it."
+    move to this model.
+    You can use the function number-of-processors to get the number of processors for you system to decide on the
+    pool-size.  For cpu bound task you should use n+2."
   [connection-factory pool-size]
   (do
     (set-create-connection-factory connection-factory)
