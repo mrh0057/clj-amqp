@@ -8,6 +8,7 @@
                      [clj-bson "0.1.0-SNAPSHOT"]
                      [lein-marginalia "0.6.0"]
                      [marginalia "0.7.0-SNAPSHOT"]
+                     [lein-clojars "0.7.0"]
                      [midje "1.2.0" :exclusions [org.clojure.contrib/core]]]
   :warn-on-reflection true
   :aot [clj-amqp-dsl.internal.ThreadFactory])

@@ -5,6 +5,7 @@
                  [com.rabbitmq/amqp-client "2.6.1"]]
   :dev-dependencies [[swank-clojure "1.3.1"]
                      [lein-midje "1.0.3"]
+                     [lein-clojars "0.7.0"]
                      [midje "1.1.1" :exclusions [org.clojure/clojure
                                                  org.clojure.contrib/core]]]
   :warn-on-reflection true)
