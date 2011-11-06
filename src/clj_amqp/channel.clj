@@ -53,6 +53,14 @@
                       app-id
                       cluster-id))
 
+(defrecord GetResponse [body
+                        envelope
+                        message-count
+                        props])
+
+(defn make-get-response [body envelope message-count props]
+  (GetResponse. body envelope message-count props))
+
 (defrecord QueueInfo [name consumer-count message-count])
 
 (defn make-queue-info [name consumer-count message-count]
@@ -75,6 +83,17 @@
     (add-shutdown-notifier (:channel this) notifier)))
 
 (defprotocol ChannelProtocol
+  "A protocol for interacting with channels"
+  (basic-get [this queue auto-ack]
+    "Retrieve a message from a queue using AMQP.Basic.GET
+
+queue 
+  The name of the queue
+auto-ack
+  Automatically acknowledge the message
+
+returns
+  A GetResponse")
   (queue-exists? [this queue]
     "Checks to see if a queue exists.
 queue

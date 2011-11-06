@@ -13,10 +13,14 @@
   (ConnectionInfo. connection))
 
 (defn- update-connection [connection]
-  (swap! connection (fn [old]
-                      (if (not (open? (:connection old)))
-                        (assoc old :connection (create-connection))
-                        old))))
+  (let [new-connection (create-connection)
+        new-value (swap! connection (fn [old]
+                        (if (not (open? (:connection old)))
+                          (assoc old :connection new-connection)
+                          old)))]
+    (if (not= (:connection new-value) new-connection)
+      (close new-connection))
+    new-value))
 
 (defn- add-shutdown-notifier-to-connect [connection]
   (add-shutdown-notifier (:connection @connection)

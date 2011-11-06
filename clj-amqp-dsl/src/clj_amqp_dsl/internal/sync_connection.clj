@@ -15,8 +15,13 @@
   (add-shutdown-listener-to-connection connection
                                        (fn [reason]
                                          (println "Connection crashed in sync-connection!")
-                                         (swap! (fn [_]
-                                                  (make-connection-protector create-connection))))))
+                                         (let [new-connection (create-connection)
+                                               connection (swap! (fn [old-connection]
+                                                                   (if (open? (:connection old-connection))
+                                                                     old-connection
+                                                                     (make-connection-protector new-connection))))]
+                                           (if (not= new-connection (:connection connection))
+                                             (close new-connection))))))
 
 (defn initialize
   "Used to initialize the connection and other things necessary for the functions to perform their duty."

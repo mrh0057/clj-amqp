@@ -26,13 +26,13 @@
                                        (println "Direct Publish Failure!!!"))))))))
 
 (defn setup-test-queues []
-  (thread-channel-off
+  (thread-channel
    (fn [] (declare-queue "test-queue-direct" false false true)
      (bind-queue "test-queue-direct" "amq.direct" "test.direct")
        (direct-publish-test-consumer))))
 
 (defn direct-publish-test-message []
-  (thread-channel
+  (thread-channel-off
    (fn []
      (try
        (doseq [i (range 0 100000)]

@@ -6,6 +6,8 @@
   :dev-dependencies [[swank-clojure "1.3.1"]
                      [clj-rabbitmq "0.1.0-SNAPSHOT"]
                      [clj-bson "0.1.0-SNAPSHOT"]
-                     [codox "0.1.3"]
+                     [lein-marginalia "0.6.0"]
+                     [marginalia "0.7.0-SNAPSHOT"]
                      [midje "1.2.0" :exclusions [org.clojure.contrib/core]]]
-  :warn-on-reflection true)
+  :warn-on-reflection true
+  :aot [clj-amqp-dsl.internal.ThreadFactory])

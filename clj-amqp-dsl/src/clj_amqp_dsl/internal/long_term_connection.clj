@@ -27,17 +27,20 @@
 (declare shutdown-handler)
 
 (defn- update-connection []
-  (swap! *connection*
-         (fn [connection-info]
-           (if (not (open? (:connection connection-info)))
-             (let [connection (create-connection)]
-               (doseq [consumer-queue @*consumers*]
-                 (add-consumer-to-harden connection
-                                         (:queue consumer-queue)
-                                         (:consumer consumer-queue))
-                 (add-shutdown-listener-to-connection connection shutdown-handler))
-               (assoc connection-info :connection connection))
-             connection-info))))
+  (let [connection (create-connection)
+        new-value  (swap! *connection*
+                          (fn [connection-info]
+                            (if (not (open? (:connection connection-info)))
+                              (assoc connection-info :connection connection)
+                              connection-info)))]
+    (if (= (:connection connection) connection)
+      (doseq [consumer-queue @*consumers*]
+        (add-consumer-to-harden connection
+                                (:queue consumer-queue)
+                                (:consumer consumer-queue))
+        (add-shutdown-listener-to-connection connection shutdown-handler))
+      (close connection))
+    new-value))
 
 (defn shutdown-handler [reason]
   (do

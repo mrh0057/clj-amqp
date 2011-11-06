@@ -1,15 +1,14 @@
-(ns ^{:doc "Provides a thread pool for non cpu bound task"}
-  clj-amqp-dsl.internal.unbound-channel-threads
+(ns clj-amqp-dsl.internal.unbound-channel-threads
   (:import [java.util.concurrent ConcurrentHashMap ExecutorService
             Executors ThreadPoolExecutor TimeUnit LinkedBlockingQueue]
            [java.util Date Map]
            clj_amqp_dsl.internal.ChannelThreadFactory)
   (:require [clj-amqp.channel :as channel]
-            [clj-amqp.core :as amqp])
-  (:use [clj-amqp-dsl.connection :only [create-connection]]
-        clj-amqp.common
-        clj-amqp-dsl.internal.core
-        [clj-amqp.connection :only [create-channel]]))
+            [clj-amqp.core :as amqp]
+            [clj-amqp-dsl.connection :as dsl-conn]
+            [clj-amqp.connection :as conn])
+  (:use clj-amqp.common
+        clj-amqp-dsl.internal.core))
 
 (defrecord ConnectionInfo [connection
                            channels])
@@ -42,14 +41,14 @@
                 channel
                 (new Date)))
 
-(defn remove-all-channels []
-  (def *current-channels* (new java.util.concurrent.ConcurrentHashMap 300)))
-
 (defn execute-function [func]
   (.submit ^ExecutorService *thread-pool* ^Runnable (cast Runnable
                                                           (fn []
-                                                            (amqp/with-channel (get-channel)
-                                                              func)))))
+                                                            (try
+                                                              (amqp/with-channel (get-channel)
+                                                                (func))
+                                                              (catch Exception e
+                                                                (.printStackTrace e)))))))
 
 (defn setup-connection-listeners [connection]
   (try
@@ -64,22 +63,27 @@
 
 (defn get-connection []
   (if (not (:connection @*connection-info*))
-    (swap! *connection-info*
-           (fn [old-connection]
-             (if (and (:connection old-connection)
-                      (open? (:connection old-connection)))
-               old-connection
-               (make-connection-info (create-connection)
-                                     (new java.util.concurrent.ConcurrentHashMap 300)))))
+    (let [new-connection (dsl-conn/create-connection)
+          connection
+          (swap! *connection-info*
+                 (fn [old-connection]
+                   (if (and (:connection old-connection)
+                            (open? (:connection old-connection)))
+                     old-connection
+                     (make-connection-info new-connection
+                                           (new java.util.concurrent.ConcurrentHashMap 300)))))]
+      (if (not (= (:connection connection) new-connection))
+        (close new-connection))
+      connection)
     @*connection-info*))
 
 (defn create-new-channel []
-  (create-channel (:connection (get-connection))))
+  (conn/create-channel (:connection (get-connection))))
 
 (defn- get-channel-by-thread-id [thread-id]
   (let [current-channels (:channels (get-connection))]
     (if (contains? current-channels thread-id)
-      (get current-channels thread-id)
+      (:channel (get current-channels thread-id))
       (let [channel (make-channel-info thread-id (create-new-channel))]
         (.put ^Map current-channels thread-id channel)
         (:channel channel)))))
@@ -98,13 +102,14 @@ returns
   (println "Removing old channels.")
   (let [date (.getTime (new Date))]
     (doseq [channel (.values ^Map channels)]
-      (if (< date (+ *timeout* (.getTime ^Date (:timestamp channel))))
-        (try
-          (close (:channel channel))
-          (catch Exception e
-            (println e)
-            (.printStackTrace e)))
-        (.remove ^Map channels (:thread-id channel))))))
+      (if (> date (+ *timeout* (.getTime ^Date (:timestamp channel))))
+        (do
+          (try
+            (close (:channel channel))
+            (catch Exception e
+              (println e)
+              (.printStackTrace e)))
+            (.remove ^Map channels (:thread-id channel)))))))
 
 (defn- clean-thread []
   (loop []
@@ -123,5 +128,4 @@ returns
 (defn initialize []
   (def *thread-pool* (Executors/newCachedThreadPool (new ChannelThreadFactory)))
   (def *connection-info* (atom {}))
-  (start-clearing-thread)
-  (remove-all-channels))
+  (start-clearing-thread))

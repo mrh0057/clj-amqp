@@ -10,29 +10,45 @@
 (defmacro with-channel
   "Used to start a block of code that binds to a specific channel.
 
-channel
+`channel`
   The channel to bind to.
-body
+
+`body`
   The expressions to execute."
   [channel & body]
   `(binding [clj-amqp.core/*channel* ~channel]
      ~@body))
 
+(defn basic-get
+  "Retrieve a message from a queue using AMQP.Basic.GET
+
+queue 
+  The name of the queue
+auto-ack
+  Automatically acknowledge the message
+
+returns
+  A GetResponse"
+  [queue auto-ack]
+  (channel/basic-get *channel* queue auto-ack))
+
 (defn acknowledge
   "Used to acknowledge the delivery of a message.
 
-delivery-tag 
+`delivery-tag`
   The delivery tag to acknowledge"[delivery-tag]
   (channel/acknowledge *channel* delivery-tag))
 
 (defn reject
   "Used to not acknowledge a message delivery.
 
-delivery-tag 
+`delivery-tag`
   The delivery tag to not acknowledge.
-requeue
+
+`requeue`
   To requeue the messae
-multiple
+
+`multiple`
   reject multiple"
   ([delivery-tag requeue]
      (reject delivery-tag requeue false))
@@ -42,8 +58,9 @@ multiple
 (defn queue-exists?
   "Checks to see if a queue exists.
 
-queue
+`queue`
   The name of the queue
+
 returns
   true if the queue exists"
   [queue]
@@ -52,14 +69,15 @@ returns
 (defn add-shutdown-notifier
   "Used to notify a function in the event the connection closes.
 
-notifier
+`notifier`
   The function to call with the channel is closed.
     Takes 1 parameter with is the ShutdownSignalInfo"
   [notifier]
   (add-shutdown-notifier *channel* notifier))
 
-(defn open? []
+(defn open?
   "Checks to see if the channel is open."
+  []
   (open? *channel*))
 
 (defn exclusive-queue
@@ -73,13 +91,16 @@ return
 (defn bind-queue
   "Used to create a queue.
 
-queue
+`queue`
   The name of the queue
-exchange
+
+`exchange`
   The name of the exchange
-routing-key
+
+`routing-key`
   The routing key
-arguments
+
+`arguments`
   The additional arguments to the queue"
   ([queue exchange routing-key]
      (channel/bind-queue *channel* queue exchange routing-key))
@@ -88,13 +109,17 @@ arguments
 
 (defn unbind-queue
   "Used to unbind a queue
-queue
+
+`queue`
   The name of the queue
-exchange
+
+`exchange`
   The name of the exchange
-routing-key
+
+`routing-key`
   The routing key of the exchange.
-arguments
+
+`arguments`
   The string/object map for arguments to unbind the queue."
   ([queue exchange routing-key]
      (channel/unbind-queue *channel* queue exchange routing-key))
@@ -104,13 +129,16 @@ arguments
 (defn declare-queue
   "Used to create a queue
 
-queue
+`queue`
   The name of the queue to create
-durable
+
+`durable`
   If the queue serivces after the server is shutdown.
-auto-delete
+
+`auto-delete`
   To automatically delete the queue
-arguments
+
+`arguments`
   The additional arguments for declaring the queue string/object map"
   ([queue durable exclusive auto-delete]
      (channel/declare-queue *channel* queue durable exclusive auto-delete))
@@ -120,7 +148,7 @@ arguments
 (defn purge-queue
   "Removes all of the messages from the queue.
 
-queue
+`queue`
   The queue to remove the messages from."
   [queue]
   (channel/purge-queue *channel* queue))
@@ -128,12 +156,13 @@ queue
 (defn delete-queue
   "Deletes a queue for the server.
 
-queue
+`queue`
   The name of the queue to delete
-options
-  :unused
+
+`options`
+  `:unused`
     true to delete the queue if its currently not in use.
-  :empty
+  `:empty`
     true to delete teh queue if its not empty"
   [queue & options]
   (if (empty? options)
@@ -142,14 +171,18 @@ options
 
 (defn consume
   "Used to consume a message.
-queue
+
+`queue`
   The name of the queue to consume
-consumer
+
+`consumer`
   A function that consumes the incoming messages.
   The function takes four arguments the channel the consumer is associated with, body, Envelope, and properties.
-message-verifier
+
+`message-verifier`
   A function that verifies the message is valid.
-arguments
+
+`arguments`
   The additional arguments for the consume function. string/object map
 
 returns
@@ -168,43 +201,61 @@ consumer-tag
 (defn publish
   "Used to publish a message.
 
-exchange
+`exchange`
   The exchange to publish the message on.
-routing-key
+
+`routing-key`
   The routing key to
-body
+
+`body`
   The body of the message to publish.
-options
-  :content-type 
+
+##options
+  `:content-type`
     defaults to nil
-  :content-encoding d
-    efaults to nil
-  :headers 
+
+  `:content-encoding`
     defaults to nil
-  :delivery-mode 
+
+  `:headers`
     defaults to nil
-   :persistent  The message survives a restart.
-   :nonpersitent  The message maybe lost if the server restarts.
-  :priority 
+
+  `:delivery-mode`
+    defaults to nil
+   `:persistent`  The message survives a restart.
+   `:nonpersitent`  The message maybe lost if the server restarts.
+
+  `:priority`
      defaults to nil
-  :correlation-id 
+
+  `:correlation-id`
      defaults to nil
-  :reply-to 
+
+  `:reply-to` 
      defaults to nil
-  :expiration 
+
+  `:expiration`
     defaults to nil
-  :message-id 
+
+  `:message-id`
     defaults to nil
-  :timestamp
+
+  `:timestamp`
     defaults to nil
-  :type
+
+  `:type`
     defaults to nil
-  :user-id
-  :app-id
+
+  `:user-id`
+
+  `:app-id`
     defaults to nil
-  :cluster-id
+
+  `:cluster-id`
     defaults to nil
-  :mandatory defaults to false. True to make the publish mandatory.
+
+  `:mandatory` defaults to false. True to make the publish mandatory.
+
   :immediate defaults to false. True to request to be immediately published"
   [exchange routing-key body & options]
   (if (empty? options)
@@ -214,25 +265,34 @@ options
 (defn exchange
   "Used to create an exchange.
 
-name 
+`name`
   The name of the exchange to create
-type
+
+#type
   The type of exchange.
-  :direct 
+
+  `:direct`
     Send messages to each queue that matches the routing key exactly.
-  :fanout 
+
+  `:fanout`
     Send a message to all of the queues.
-  :topic 
-    Must have a list of words delimited by a . The maxium length is limitted to 255 bytes.
-    For more information: http://www.rabbitmq.com/tutorials/tutorial-five-python.html
-options
-  :durable 
+
+  `:topic`
+     Must have a list of words delimited by a . The maxium length is limitted to 255 bytes.
+     For more [information](http://www.rabbitmq.com/tutorials/tutorial-five-python.html)
+
+##options
+
+  `:durable`
    The exchange survives a server restart.  Defaults to false
-  :auto-delete
+
+  `:auto-delete`
    The exchange is automattically deleted. Defaults to false
-  :internal
+
+  `:internal`
    The exchange is internal and can't be directly published to by the client.
-  :arguments
+
+  `:arguments`
     The additional arguments for the exchange. string/object map"
   [name type & options]
   (if (empty? options)
@@ -242,13 +302,16 @@ options
 (defn bind-exchange
   "Used to bind an exchange to another exchange.
 
-destination
+`destination`
   The exchange that contains the messages.
-source
+
+`source`
   The exchange that receives the messages.
-routing-key
+
+`routing-key`
   The routing key to use to the bind the exchange to
-arguments
+
+`arguments`
   The additional arguments for the exchange. string/object map"
   ([destination source routing-key]
      (channel/bind-exchange *channel* destination source routing-key))
@@ -258,13 +321,16 @@ arguments
 (defn unbind-exchange
   "Used unbind an exchange to another exchange.
 
-destination
+`destination`
   The exchange that contains the messages.
-source
+
+`source`
   The exchange that receives the messages.
-routing-key
+
+`routing-key`
   The routing key to use to the bind the exchange to
-arguments 
+
+`arguments`
   The additional arguments for the queue. string/object map"
   ([destination source routing-key]
      (channel/unbind-exchange *channel* destination source routing-key))
@@ -274,9 +340,10 @@ arguments
 (defn delete-exchange
   "Used to delete the exchange from the server.
 
-exchange
+`exchange`
   The exchange to delete
-unused
+
+`unused`
   delete the exchange if its unused."
   ([exchange]
      (channel/delete-exchange *channel* exchange))
@@ -286,8 +353,9 @@ unused
 (defn flow
   "Used to start/stop the flow of messages.
 
-activity
+`activity`
   True to start sending messages.
+
   False to stop stop sending messages."
   [active]
   (channel/flow *channel* active))

@@ -33,6 +33,12 @@
                    (.getConsumerCount info)
                    (.getMessageCount info)))
 
+(defn- convert-envelope [^com.rabbitmq.client.Envelope envelope]
+  (make-envelope (.getDeliveryTag envelope)
+                 (.getExchange envelope)
+                 (.getRoutingKey envelope)
+                 (.isRedeliver envelope)))
+
 (defn- create-consumer-proxy [channel consumer]
   (proxy [DefaultConsumer] [channel]
     (handleCancel [consumer-tag]
@@ -42,10 +48,7 @@
     (handleDelivery [consumer-tag ^com.rabbitmq.client.Envelope envelope properties ^bytes body]
       (consumer channel
                 body
-                (make-envelope (.getDeliveryTag envelope)
-                               (.getExchange envelope)
-                               (.getRoutingKey envelope)
-                               (.isRedeliver envelope))
+                (convert-envelope envelope)
                 (convert-message-properites properties)))
     (handleRecoverOk [])
     (handleShutdownSignal [consumerTag sig])))
@@ -82,6 +85,12 @@
 
 (extend-type Channel
   ChannelProtocol
+  (basic-get [this queue auto-ack]
+    (let [^com.rabbitmq.client.GetResponse response (.basicGet this queue auto-ack)]
+      (make-get-response (.getBody response)
+                         (convert-envelope (.getEnvelope response))
+                         (.getMessageCount response)
+                         (convert-message-properites (.getProps response)))))
   (queue-exists? [this queue]
     (try
       (convert-declare-queue-ok(.queueDeclarePassive this queue))
